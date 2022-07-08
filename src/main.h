@@ -136,6 +136,19 @@ struct LifeIndex // 生活指数
   char status_code[64];  // 错误代码
   char uvi[10];          // 紫外线指数
 };
+
+
+// 定义枚举变量 屏幕模式选择
+typedef enum
+{
+		SCREEN_MODE_main = 0,       // 主页面
+    SCREEN_MODE_clock = 1,      // 时钟页面
+    SCREEN_MODE_weather ,	      // 天气页面
+    SCREEN_MODE_configuration,  // 配置页面
+    SCREEN_MODE_read,           // 阅读页面
+    SCREEN_MODE_game,           // 游戏页面
+} screen_status_e;
+
 extern LifeIndex life_index; // 创建结构体变量 生活指数
 extern boolean qqtq_state1 ;      // 请求天气状态位
 extern uint32_t sta_count ;       // sta连接计数

@@ -38,6 +38,8 @@
 #include "main.h"
 # include "sleep.h"
 # include "Display_setup.h"
+#include "OneButton.h"
+#include "bsp_button.h"
 
 #include <Arduino.h>
 #include <string>
@@ -133,6 +135,11 @@ String save_data,save; //临时存放单个SD_data内容
 String file_name;
 String line_data; //用于保存行显示内容
 char net_time[] = {'0', '0', '0', '0', '-', '0','0','-','0','0',' ','0', '0', ':', '0', '0', '\0'};
+
+
+
+
+static screen_status_e screen_mode_current_state = SCREEN_MODE_main;    // 屏幕当前模式
 
 
 uint32_t RTC_minute =0;       // RTC数据-分钟
@@ -271,7 +278,7 @@ void setup()   //上电初始化
 {
   //init_setup();
   WiFi.mode(WIFI_OFF); // 关闭wifi
-  Serial.begin(9600);
+  Serial.begin(115200);
   init_ping();  //屏幕初始化
   BWClearScreen();   //黑一下刷新屏幕
    get_wifi_flag = 1;  //为1 表示去连接wifi
@@ -282,164 +289,205 @@ void setup()   //上电初始化
   display_partialLine(3,"请等待5s");
   auto_eeprom();
   // pinMode(key5, INPUT_PULLUP);     //设置gpio5为输入，按下为0   key0 按下为0
- pinMode(key5, INPUT_PULLUP);
+ //pinMode(key5, INPUT_PULLUP);
   get_wifi();                         // 只能连接2.4G频段
+  button_init();            // 按键初始化
 }
-
 
 void loop()   //主循环
 {
-  /****************** 页面1 （主UI显示）********************/
-  if( page_flag == 1)   //如果连接到wifi,并且在第一界面,就读API和显示时间天气
-  {
-   
-    do
-    { Serial.println("interface : 1");    // 界面1
-      get_time_weather();  //如果wifi_flag 为1，则可以刷新时间和天气
-      page_flag = 2;
-    }while(digitalRead(key5) == 1);  //按下key5，才会退出界面1，进入界面2
-   BW_refresh();          //黑白刷新一次
-   BW_refresh();
-  } 
-
-
-  /****************** 页面2 （显示时钟）********************/
-  if(page_flag==2)
-  {
+    button_loop();        // 检测按键输入
     
-    do
-    {Serial.println("interface : 2 ");     
-      if(incount == 0)        //  获取数据（天气实况数据，未来天气数据）
-      {
-       GetData();
-       incount++;
-      }
-      display_clock();        // 时钟显示界面
-    }while(digitalRead(key5) == 1);
-    epd.ClearFrameMemory(0xFF);         // 用指定的颜色清除帧内存，且不更新显示（黑色）
-    epd.DisplayFrame();                 // 更新显示
-
-      if (epd.Init(lut_partial_update) != 0)  // 调用外围参数失败
-      {
-      Serial.print("e-Paper init failed");
-      return;
-      }
-  epd.ClearFrameMemory(0xFF);   // 用指定的颜色清除帧内存（黑色）
-  epd.DisplayFrame();           // 更新显示
-     BWClearScreen();           // 黑一下清屏
-    //  clear_ping();  //为显示界面2 ，做清屏准备
-    page_flag=3;
-  }
-
-
-  /****************** 页面3 （显示时钟）********************/
-
-   if( page_flag == 3 )   //第一个条件是确保没连上wifi下,能通过key5进入界面2，第二个条件确保能充界面1里进入界面2
-  { 
-    read_filename();    //读SD卡文件   里面有先对SD卡挂载是否成功检查
-    pinMode(key5, INPUT_PULLUP);
-    page_flag =4; 
-    unsigned char flag=1; 
-  do{ 
-    Serial.println("界面3"); 
-    if(select_file == 1)
-    display_partialLine_BJZ(6, select1,150, 1);
-    if(flag == 1) {
-     if(digitalRead(key5) == 0)    //用来选择打开哪个File  //默认为1
-     {
-      do{Serial.println("在select里");
-      if(digitalRead(key5) == 0)
-      {
-        key5_flag+=1;
-        if(key5_flag==1) { Serial.println(1); select_file = 1; display_partialLine_BJZ(6, select1,150, 1);    }
-        if(key5_flag==2) { Serial.println(2); select_file = 2; display_partialLine_BJZ(6, select2,150, 1);  }
-        if(key5_flag>=3) key5_flag = 0; 
-      }
-      }while(digitalRead(key0) == 1);    //在选择file下，按下key0退出
-      flag = 0;
-      Serial.println("退出select"); 
-     } }
-    page_flag = 4;
-    if(digitalRead(key0) == 0)   //返回界面1
-    { 
-      do{
-      page_flag = 1;get_wifi_flag = 1;  //1.是放它放回界面1，2.是让他重新连一次wifi
-      wifi_flag = 1;to_one_flag = 1;  // 1.是为了连接成功用。2.重界面2 返回界面1 ，就让他清一下屏幕的标志  （放置重复刷新屏幕）    
-      Serial.println("在key0的循环里");
-      break;
-      }while(digitalRead(key5) == 1); 
-    }
-    Serial.println(page_flag);
-    }while(digitalRead(key5) == 1 );   //按下则进入界面3 
-  }
-   if(page_flag == 4  )        //进入页面3
-  { char flag=0;
-    sdBeginCheck();   //SD卡挂载检查
-    if(select_file == 2) {  file_name = "word.txt"; }
-    if(select_file == 1) {  file_name = "xs.txt"; }
-     read_file_data(); //读取SD卡文件内容，保存到SD_data中
-    do{
-    Serial.println("界面4");
-    if(digitalRead(key5) == 0)
-      {
-      BWClearScreen();   //黑一下刷新屏幕
-        if( select_file == 1)
-       show_type1(now_read1);  //传当前阅读位置给它   三体
-        if(select_file == 2 )
-       show_type2(now_read2);     //单词
-      }
-    }while(digitalRead(key0) == 1);
-    delay(1000);  //防止直接退出下一个do while
-  do
-  {
-    Serial.println("选择界面1 or 界面2");
-    Serial.println("按下key5则直接返回界面3");
-    Serial.println("按下key0则返回界面1");
-    page_flag = 3; get_wifi_flag =0;
-    if(digitalRead(key0) == 0) 
-    do
-    {
-      Serial.println("返回第一界面中");
-      page_flag = 1;get_wifi_flag ==1; flag=1; break;
-    }while(1);
-    if(flag==1) { flag=0;break; }
-  } while (digitalRead(key5) == 1); //按下key5退出这个
-  BWClearScreen();
-  }
-  Serial.println("在loop里"); Serial.println(page_flag);  Serial.println();
   
-  if( get_wifi_flag ==1 )   //目的是为了重界面2返回界面1 ，重新连接一次wifi
-    { get_wifi_flag ==0 ;  //清0 放置 重复去连wifi
-      BWClearScreen();   //黑一下刷新屏幕
-      display_partialLine(0,".");display_partialLine(1,"wifi连接中...");     
-      display_partialLine(2,".");display_partialLine(3,"请等待5s");     
-      display_partialLine(4,".");display_partialLine(5,".");display_partialLine(6,".");
-      get_wifi();  
-    }
-}
-    //BWClearScreen();   //黑一下刷新屏幕  display_partialLine_BJZ(uint8_t line, String zf,uint16_t x, uint8_t width); //不居中
-void key0_select()
-{ key0_flag ++;
-  if(key0_flag == 0 ){
-    display_partialLine_BJZ(6,"←",230, 1);
-    display_partialLine_BJZ(0," ",230, 1);
-    }
-  else {
-    if(key0_flag >=7 ) {key0_flag == 0; }
-    display_partialLine_BJZ(key0_flag-1," ",230, 1);
-    display_partialLine_BJZ(key0_flag,"←",230, 1);    
-  }
 }
 
-void get_time_weather()  { 
-  if( wifi_flag == 1 ) {
-  GetData();
-  display_main();
-      RTC_tqmskjxs = 0;         // 写0表示下次不需要开机显示
-    ESP.rtcUserMemoryWrite(RTCdz_tqmskjxs, &RTC_tqmskjxs, sizeof(RTC_tqmskjxs));//天气模式开机显示
-    // esp_sleep(3600000);       // 休眠1个钟
-  }  //获得天气,在里面调用处理天气的函数，处理完后显示
-}
+// void loop()   //主循环
+// {
+//   /****************** 页面1 （主UI显示）********************/
+//   if( page_flag == 1)   //如果连接到wifi,并且在第一界面,就读API和显示时间天气
+//   {
+   
+//     do
+//     { Serial.println("interface : 1");    // 界面1
+//       get_time_weather();  //如果wifi_flag 为1，则可以刷新时间和天气
+//       page_flag = 2;
+//     }while(digitalRead(key5) == 1);  //按下key5，才会退出界面1，进入界面2
+//    BW_refresh();          //黑白刷新一次
+//    BW_refresh();
+//   } 
+
+
+//   /****************** 页面2 （显示时钟）********************/
+//   if(page_flag==2)
+//   {
+    
+//     do
+//     {Serial.println("interface : 2 ");     
+//       if(incount == 0)        //  获取数据（天气实况数据，未来天气数据）
+//       {
+//        GetData();
+//        incount++;
+//       }
+//       display_clock();        // 时钟显示界面
+//     }while(digitalRead(key5) == 1);
+//     epd.ClearFrameMemory(0xFF);         // 用指定的颜色清除帧内存，且不更新显示（黑色）
+//     epd.DisplayFrame();                 // 更新显示
+
+//       if (epd.Init(lut_partial_update) != 0)  // 调用外围参数失败
+//       {
+//       Serial.print("e-Paper init failed");
+//       return;
+//       }
+//   epd.ClearFrameMemory(0xFF);   // 用指定的颜色清除帧内存（黑色）
+//   epd.DisplayFrame();           // 更新显示
+//      BWClearScreen();           // 黑一下清屏
+//     //  clear_ping();  //为显示界面2 ，做清屏准备
+//     page_flag=3;
+//   }
+
+
+//   /****************** 页面3 （显示时钟）********************/
+
+//    if( page_flag == 3 )   //第一个条件是确保没连上wifi下,能通过key5进入界面2，第二个条件确保能充界面1里进入界面2
+//   { 
+//     read_filename();    //读SD卡文件   里面有先对SD卡挂载是否成功检查
+//     pinMode(key5, INPUT_PULLUP);
+//     page_flag =4; 
+//     unsigned char flag=1; 
+//   do{ 
+//     Serial.println("界面3"); 
+//     if(select_file == 1)
+//     display_partialLine_BJZ(6, select1,150, 1);
+//     if(flag == 1) {
+//      if(digitalRead(key5) == 0)    //用来选择打开哪个File  //默认为1
+//      {
+//       do{Serial.println("在select里");
+//       if(digitalRead(key5) == 0)
+//       {
+//         key5_flag+=1;
+//         if(key5_flag==1) { Serial.println(1); select_file = 1; display_partialLine_BJZ(6, select1,150, 1);    }
+//         if(key5_flag==2) { Serial.println(2); select_file = 2; display_partialLine_BJZ(6, select2,150, 1);  }
+//         if(key5_flag>=3) key5_flag = 0; 
+//       }
+//       }while(digitalRead(key0) == 1);    //在选择file下，按下key0退出
+//       flag = 0;
+//       Serial.println("退出select"); 
+//      } }
+//     page_flag = 4;
+//     if(digitalRead(key0) == 0)   //返回界面1
+//     { 
+//       do{
+//       page_flag = 1;get_wifi_flag = 1;  //1.是放它放回界面1，2.是让他重新连一次wifi
+//       wifi_flag = 1;to_one_flag = 1;  // 1.是为了连接成功用。2.重界面2 返回界面1 ，就让他清一下屏幕的标志  （放置重复刷新屏幕）    
+//       Serial.println("在key0的循环里");
+//       break;
+//       }while(digitalRead(key5) == 1); 
+//     }
+//     Serial.println(page_flag);
+//     }while(digitalRead(key5) == 1 );   //按下则进入界面3 
+//   }
+//    if(page_flag == 4  )        //进入页面3
+//   { char flag=0;
+//     sdBeginCheck();   //SD卡挂载检查
+//     if(select_file == 2) {  file_name = "word.txt"; }
+//     if(select_file == 1) {  file_name = "xs.txt"; }
+//      read_file_data(); //读取SD卡文件内容，保存到SD_data中
+//     do{
+//     Serial.println("界面4");
+//     if(digitalRead(key5) == 0)
+//       {
+//       BWClearScreen();   //黑一下刷新屏幕
+//         if( select_file == 1)
+//        show_type1(now_read1);  //传当前阅读位置给它   三体
+//         if(select_file == 2 )
+//        show_type2(now_read2);     //单词
+//       }
+//     }while(digitalRead(key0) == 1);
+//     delay(1000);  //防止直接退出下一个do while
+//   do
+//   {
+//     Serial.println("选择界面1 or 界面2");
+//     Serial.println("按下key5则直接返回界面3");
+//     Serial.println("按下key0则返回界面1");
+//     page_flag = 3; get_wifi_flag =0;
+//     if(digitalRead(key0) == 0) 
+//     do
+//     {
+//       Serial.println("返回第一界面中");
+//       page_flag = 1;get_wifi_flag ==1; flag=1; break;
+//     }while(1);
+//     if(flag==1) { flag=0;break; }
+//   } while (digitalRead(key5) == 1); //按下key5退出这个
+//   BWClearScreen();
+//   }
+//   Serial.println("在loop里"); Serial.println(page_flag);  Serial.println();
+  
+//   if( get_wifi_flag ==1 )   //目的是为了重界面2返回界面1 ，重新连接一次wifi
+//     { get_wifi_flag ==0 ;  //清0 放置 重复去连wifi
+//       BWClearScreen();   //黑一下刷新屏幕
+//       display_partialLine(0,".");display_partialLine(1,"wifi连接中...");     
+//       display_partialLine(2,".");display_partialLine(3,"请等待5s");     
+//       display_partialLine(4,".");display_partialLine(5,".");display_partialLine(6,".");
+//       get_wifi();  
+//     }
+// }
+//     //BWClearScreen();   //黑一下刷新屏幕  display_partialLine_BJZ(uint8_t line, String zf,uint16_t x, uint8_t width); //不居中
+
+
+   
+
+
+// void key0_select()
+// { key0_flag ++;
+//   if(key0_flag == 0 ){
+//     display_partialLine_BJZ(6,"←",230, 1);
+//     display_partialLine_BJZ(0," ",230, 1);
+//     }
+//   else {
+//     if(key0_flag >=7 ) {key0_flag == 0; }
+//     display_partialLine_BJZ(key0_flag-1," ",230, 1);
+//     display_partialLine_BJZ(key0_flag,"←",230, 1);    
+//   }
+// }
+
+// void get_time_weather()  { 
+//   if( wifi_flag == 1 ) {
+//   GetData();
+//   display_main();
+//       RTC_tqmskjxs = 0;         // 写0表示下次不需要开机显示
+//     ESP.rtcUserMemoryWrite(RTCdz_tqmskjxs, &RTC_tqmskjxs, sizeof(RTC_tqmskjxs));//天气模式开机显示
+//     // esp_sleep(3600000);       // 休眠1个钟
+//   }  //获得天气,在里面调用处理天气的函数，处理完后显示
+// }
+
+
+
+
+// /**
+//  * @brief       屏幕模式选择
+//  * @param[in]   dat: 要写入的数据
+//  * @retval      void
+//  * @attention
+//  */
+// screen_status_e Screen_Mode_Changed(void)
+// {
+//    if(digitalRead(key5) == 1)   // 检测到按键5按下，进行模式变换
+//    {
+//       switch (screen_mode_current_state)
+//       {
+//       case /* constant-expression */:
+//         /* code */
+//         break;
+      
+//       default:
+//         break;
+//       }
+
+//    }
+
+
+// }
+
 
 void GetData()
 {
