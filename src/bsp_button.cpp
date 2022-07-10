@@ -29,8 +29,8 @@ static button_status_e button0_current_state = button_none;      // °´¼ü0µ±Ç°°´¼
 /**
  * @brief       °´¼ü³õÊ¼»¯º¯Êý
  * @param[in]   none
- * @retval      ÔÚsetupº¯Êýµ÷ÓÃ
- * @attention
+ * @retval      none
+ * @attention  ÔÚsetupº¯Êýµ÷ÓÃ
  */
  void button_init(void)
  {
@@ -135,33 +135,33 @@ void longPressStop1()
 void click2() 
 {
   Serial.println("Button 2 click.");
-  button0_current_state = button_click;    // ¸üÐÂ×´Ì¬
+  button0_current_state = button_click2;    // ¸üÐÂ×´Ì¬
 } 
 
 
 void doubleclick2() 
 {
   Serial.println("Button 2 doubleclick.");
-  button0_current_state = button_doubleclick;    // ¸üÐÂ×´Ì¬
+  button0_current_state = button_doubleclick2;    // ¸üÐÂ×´Ì¬
 } 
 
 
 void longPressStart2()
 {
   Serial.println("Button 2 longPress start");
-  button0_current_state = button_longPressStart;    // ¸üÐÂ×´Ì¬
+  button0_current_state = button_longPressStart2;    // ¸üÐÂ×´Ì¬
 }
 
 
 void longPress2() 
 {
   Serial.println("Button 2 longPress...");
-  button0_current_state = button_longPress;    // ¸üÐÂ×´Ì¬
+  button0_current_state = button_longPress2;    // ¸üÐÂ×´Ì¬
 } 
 
 void longPressStop2() 
 {
   Serial.println("Button 2 longPress stop");
-  button0_current_state = button_longPressStop;    // ¸üÐÂ×´Ì¬
+  button0_current_state = button_longPressStop2;    // ¸üÐÂ×´Ì¬
 }
 

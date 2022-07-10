@@ -1,3 +1,29 @@
+
+/************************** Dongguan-University of Technology -ACE**************************
+ *@project   Ink_Screen
+ *@Author    Dongguan-University of Technology  ACE  叶昭廷Y.Z.T.   &&  刘创毅
+ *@Date      2022-07-08
+
+                    P                          :u7  :Ii              .
+                   QBQ                     sQBBQBB  PBBBBQI.        XQBBBBBBBBBQBBBBBBBBBBBBM
+                  bBBBZ                 .MQBQBBBQB  5BBBBBBBBi      uBBBBBBBBBQBBBBBBBBBQBBBP
+                 bBBQQB5               XBBBRQQBBBP  sQBQBQQBBBZ     IBBBBBBBBBBBBBBBBBBBBBBBD
+                 rBBgRQBY             BBQQRBBQr        rgBBBQr
+               .  iBBgRQB7           BBQRgBQ:            iE.
+              :BY  7BBgRQB:         sBQMgBB
+             .BBB:  uBBgRBB.        BBMDQQ:                         rSU57  UQPdPbPPPPqPPbPdQs
+             BBQBB:  XBQgRBB        QBggQB                          sBEQ1  QBBBBQBBBBBBBBBBBZ
+            BBQgBBB   KBRDRBB       BBgDBB                          jBDQU  QBBBBBBBBBBBQBBBBg
+           BBQgRBB     dQggQBB      BBggQB.                         iXJS7  uDK5XXK5KXKXXSSXg7
+          gBQgRQB   BBggQDggQBQ     YBQDMBB
+         PBQgRBB   BBBBBRQgMgQBg     BBQgRBB:            iZ:
+        2BQgMBB.  BBBBBBBBBQRgQBK     BBBRQBBQL.      .rRBBQBr       ..                   ..
+       vQBgRQB:  :uriiiiiirBQQgBB1     XQBQQQBBBBE  uBQBQBQBBBD     SBBBBBBBBBBBBBBBBBBBQBBBD
+      7QBQBBBr             :BBBQBBY     .ZBQBBBBBB  qBBQBBBBB:      UBBBBQBBBBBBBBBBBBBBBBBBd
+     LBBBBBBJ               7BBBBBQu       YRBBBQB  KBBBBBJ.        IBQBBBBBQBBBBBBBBBBBBBBBZ
+                                                7i  .7.
+*************************** Dongguan-University of Technology -ACE**************************/
+
 /*
   适用 8266-4MB(FS3MB OTA~512Kb)
   
@@ -5,8 +31,6 @@
   V001: 初步测试SD的挂载、按键、墨水屏显示列表。
   因为8266引脚不够用，SD卡的CS引脚与按键3共用，
   故每次调用完按键就必须卸载SD卡再挂载SD卡。
-
-  V002: 正在构建，会放出比较完整的SD卡、按键、墨水屏联动显示例程
 */
 
 /*
@@ -40,6 +64,8 @@
 # include "Display_setup.h"
 #include "OneButton.h"
 #include "bsp_button.h"
+#include "menu.h"
+#include "menu_ui.h"
 
 #include <Arduino.h>
 #include <string>
@@ -290,14 +316,15 @@ void setup()   //上电初始化
   auto_eeprom();
   // pinMode(key5, INPUT_PULLUP);     //设置gpio5为输入，按下为0   key0 按下为0
  //pinMode(key5, INPUT_PULLUP);
-  get_wifi();                         // 只能连接2.4G频段
+  //get_wifi();                         // 只能连接2.4G频段
   button_init();            // 按键初始化
+  Menu_Main_Init();
 }
 
 void loop()   //主循环
 {
     button_loop();        // 检测按键输入
-    
+    Menu_Select_main(key5_status_return());
   
 }
 

@@ -22,11 +22,17 @@
 typedef enum
 {
     button_none = 0,        // 什么都没干
-	button_click = 1,       // 按键短按1次
-    button_doubleclick ,          // 按键短按2次
+	  button_click = 1,       // 按键短按1次
+    button_doubleclick ,    // 按键短按2次
     button_longPressStart , // 按键长按开始判定
     button_longPress,      // 按键长按中
     button_longPressStop,  // 按键长按结束判定
+
+    button_click2,       // 按键短按1次
+    button_doubleclick2 ,    // 按键短按2次
+    button_longPressStart2 , // 按键长按开始判定
+    button_longPress2,      // 按键长按中
+    button_longPressStop2,  // 按键长按结束判定
 } button_status_e;
 
 

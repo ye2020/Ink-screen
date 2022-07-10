@@ -1,3 +1,9 @@
 {
-    "EIDE.SerialPortMonitor.BaudRate": 115200
+    "EIDE.SerialPortMonitor.BaudRate": 115200,
+    "files.associations": {
+        "menu_conf.h": "c",
+        "menu.h": "c",
+        "hardware_setting.h": "c",
+        "menu_ui.h": "c"
+    }
 }
