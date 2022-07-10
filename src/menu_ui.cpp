@@ -20,67 +20,85 @@ void Menu_Main_Init(void)
 	Serial.println("home status");
 
 	sub_index.main_current_index = 0;
-	sub_index.setting_current_index = 0;
+	sub_index.setting_current_index = 8;
+	sub_index.select_current_index = 1;
 	sub_index.Current_Page = MAIN_PAGE;
 	//.....刷新回主页面的UI和状态(等待添加初始化菜单)
 }
 
 //进入相应的页面
-void Enter_Page(menu_i32 index, button_status_e KeyValue)
+void Enter_Page(menu_i32 index, button_status_e Key5Value , button_status_e Key0Value)
 {
+	
 	sub_index.Current_Page = index;
 	switch (sub_index.Current_Page)
 	{
 		//进入主页面
 	case MAIN_PAGE:
 	{
-		Menu_Select_Item(MAIN_PAGE, KeyValue);
+		Menu_Select_Item(MAIN_PAGE, Key5Value,Key0Value);
 		break;
 	}
 		// 进入时钟页面
 	case CLOCK_PAGE:
 	{
-		Menu_Select_Item(CLOCK_PAGE, KeyValue);
+		Menu_Select_Item(CLOCK_PAGE,  Key5Value,Key0Value);
 		break;
 	}
 		// 	进入天气界面
 	case WEATHER_PAGE:
 	{
-		Menu_Select_Item(WEATHER_PAGE, KeyValue);
+		Menu_Select_Item(WEATHER_PAGE,  Key5Value,Key0Value);
 		break;
 	}
 	//进入配置页面
 	case CONFIGURATION_PAGE:
 	{
-		Menu_Select_Item(CONFIGURATION_PAGE, KeyValue);
+		Menu_Select_Item(CONFIGURATION_PAGE,  Key5Value,Key0Value);
 		break;
 	}
 	//进入阅读页面
 	case READ_PAGE:
 	{
-		Menu_Select_Item(READ_PAGE, KeyValue);
+		Menu_Select_Item(READ_PAGE,  Key5Value,Key0Value);
 		break;
 	}
 	//进入游戏页面
 	case GAME_PAGE:
 	{
-		Menu_Select_Item(GAME_PAGE, KeyValue);
+		Menu_Select_Item(GAME_PAGE,  Key5Value,Key0Value);
 		break;
 	}
 	//进入设置页面
 	case SETTING_PAGE:
 	{
-		Menu_Select_Item(SETTING_PAGE, KeyValue);
+		Menu_Select_Item(SETTING_PAGE,  Key5Value,Key0Value);
+		break;
+	}
+	//进入设置页面
+	case SELECT_PAGE:
+	{
+		Menu_Select_Item(SELECT_PAGE,  Key5Value,Key0Value);
 		break;
 	}
 	// 进入菜单页面
-	case SELECT_PAGE:
+	case LANGUAGE_PAGE:
 	{
-		Menu_Select_Item(SELECT_PAGE, KeyValue);
+		Menu_Select_Item(LANGUAGE_PAGE,  Key5Value, Key0Value);
 		break;
 	}
-	default:
+	// 进入菜单页面
+	case WORD_PAGE:
+	{
+		Menu_Select_Item(WORD_PAGE,  Key5Value, Key0Value);
 		break;
+	}
+
+	// 否则返回主页面
+	default:
+	{	Menu_Select_Item(MAIN_PAGE, Key5Value,Key0Value);
+		break;
+	}
 	}
 }
 

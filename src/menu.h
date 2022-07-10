@@ -58,7 +58,7 @@ typedef struct Menu_Key_Index
 
 extern Key_Index sub_index ;
 
-typedef void (*menu_op_func)(button_status_e);
+typedef void (*menu_op_func)(button_status_e , button_status_e);
 
 typedef struct OP_STRUCT
 {
@@ -69,31 +69,37 @@ typedef struct OP_STRUCT
 /*当前菜单*/
 typedef enum 
 {
-	MAIN_PAGE = 0,          // 主页面						// 写0的话莫名报错
-	CLOCK_PAGE,             // 时钟状态
+	MAIN_PAGE = 0,          // 主页面						
+	CLOCK_PAGE,             // 时钟状态 
 	WEATHER_PAGE,           // 天气状态
 	CONFIGURATION_PAGE,     // 配置状态
 	READ_PAGE,              // 阅读状态
-	GAME_PAGE,              // 游戏状态
-  SETTING_PAGE,           // 设置模式
-	SELECT_PAGE,						// 菜单
+	GAME_PAGE,              // 游戏状态 （以上是select下的子表单）
+  SETTING_PAGE,           // 设置模式（main下的子表单）
+	SELECT_PAGE,						// 菜单    （main下的子表单）
+  LANGUAGE_PAGE,          // 语言设置（setting下的子表单）
+  WORD_PAGE,              // 字号设置（setting下的子表单）
 	
 }OP_PAGE;
 
 
 
-void Menu_Select_Item(menu_i32 current_index, button_status_e KeyValue);
+void Menu_Select_Item(menu_i32 current_index, button_status_e Key5Value , button_status_e Key0Value);
 
-void select_page_process(button_status_e KeyValue);
+/******************* 进程处理 *********************/
 
-void main_page_process(button_status_e KeyValue);
-void clock_page_process(button_status_e KeyValue);
-void weather_page_process(button_status_e KeyValue);
-void configuration_page_process(button_status_e KeyValue);
-void read_page_process(button_status_e KeyValue);
-void game_page_process(button_status_e KeyValue);
-void setting_page_process(button_status_e KeyValue);
-extern void Menu_Select_main(button_status_e Key5Value);
+void select_page_process(button_status_e Key5Value , button_status_e Key0Value);
+void main_page_process(button_status_e Key5Value , button_status_e Key0Value);
+void clock_page_process(button_status_e Key5Value , button_status_e Key0Value);
+void weather_page_process(button_status_e Key5Value , button_status_e Key0Value);
+void configuration_page_process(button_status_e Key5Value , button_status_e Key0Value);
+void read_page_process(button_status_e Key5Value , button_status_e Key0Value);
+void game_page_process(button_status_e Key5Value , button_status_e Key0Value);
+void setting_page_process(button_status_e Key5Value , button_status_e Key0Value);
+void Menu_Select_main(button_status_e Key5Value , button_status_e Key0Value);
+void language_page_process(button_status_e Key5Value, button_status_e Key0Value);
+void word_page_process(button_status_e Key5Value, button_status_e Key0Value);
+
 
 
 

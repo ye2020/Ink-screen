@@ -20,7 +20,7 @@
 
 void Menu_Main_Init(void);
 
-void Enter_Page(menu_i32 index,button_status_e KeyValue);
+void Enter_Page(menu_i32 index, button_status_e Key5Value , button_status_e Key0Value);
 
 void main_page_ui_process(menu_u8 index);
 

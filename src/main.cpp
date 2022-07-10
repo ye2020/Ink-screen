@@ -324,7 +324,7 @@ void setup()   //上电初始化
 void loop()   //主循环
 {
     button_loop();        // 检测按键输入
-    Menu_Select_main(key5_status_return());
+    Menu_Select_main(key5_status_return(),key0_status_return());
   
 }
 
