@@ -110,10 +110,8 @@ void get_wifi();
 
 void clear_ping();   //刷新整个屏幕
 void key0_select();    //在对应File 后面打√
-void GetData();
 void display_main();
-void display_clock(); //时钟显示界面
-
+void display_main_select();
 
 extern void BWClearScreen();  //黑一下清屏幕
 
@@ -144,7 +142,7 @@ unsigned char file_num_flag = 0;
 unsigned char page_flag = 1 ;   //界面标志位   123 分别表示对应界面
 unsigned char loop_flag ;   //循环显示标志位 
 unsigned char wifi_flag = 1 ; //wifi连接标志位  1为成功，0为失败
-unsigned char get_wifi_flag = 1;  //
+unsigned char get_wifi_flag = 1;  // 
 unsigned char key5_flag = 0,key0_flag = 1;  //按键标志位  key0=1默认选择第一个文件夹
 String select1="1";
 String select2="2";
@@ -179,6 +177,8 @@ uint32_t RTC_clock_code = 0;     // 时钟错误代码
 uint32_t RTC_8025T_error = 0;    // BL8025T时钟芯片错误检测 0-正常 1-年错 2-月错 3-日错 4-时错 5-分错 6-秒错
 uint32_t RTC_albumAutoOldWz = 0; // 随机轮播图片的上一次位置
 uint32_t RTC_tqmskjxs =0;     // 天气模式开机显示 0-不显示 其他-显示
+
+uint32_t RTC_get_data_count = 0;  // 数据获取计数，隔一段时间才获取新数据
 
  uint8_t  incount = 0;
 
@@ -305,6 +305,8 @@ extern const unsigned char Bitmap_kon[] PROGMEM;
 extern const unsigned char Bitmap_wifidk[] PROGMEM;
 extern const unsigned char Bitmap_ACE[]  PROGMEM;
 extern const unsigned char Bitmap_ACErig[]  PROGMEM;
+extern const unsigned char Bitmap_wifilink[] PROGMEM;
+extern const unsigned char Bitmap_wifilink_rig[] PROGMEM;
 
 void auto_eeprom()
 {
@@ -386,12 +388,12 @@ void setup()   //上电初始化
   // wifi_flag  = 1;   //为1表示默认连接成功  连接过程中失败会置0
   //loop_flag = 0;  //循环刷新标志位 0为进入刷新 1为退出
  
-  display_partialLine(1,"wifi连接中...");
-  display_partialLine(3,"请等待5s");
-  display.drawInvertedBitmap(50,3,Bitmap_m,45,45,heise); //drawInvertedBitmap
+  // display_partialLine(1,"wifi连接中...");
+  // display_partialLine(3,"请等待5s");
   auto_eeprom();
-
-  get_wifi();                         // 只能连接2.4G频段
+  //GetData();
+  display_main_home("wifi连接中....");
+  get_wifi();               // 只能连接2.4G频段
   button_init();            // 按键初始化
   Menu_Main_Init();
 }
@@ -400,7 +402,6 @@ void loop()   //主循环
 {
     button_loop();        // 检测按键输入
     Menu_Select_main(key5_status_return(),key0_status_return());
-  
 }
 
 #if 0     // 旧代码（主函数）
@@ -569,7 +570,8 @@ void get_time_weather()  {
 
 void GetData()
 {
-  
+    RTC_get_data_count = 0;
+
     String url_ActualWeather;    //天气实况地址
     String url_FutureWeather;    //未来天气地址
     String url_LifeIndex;        //生活指数地址
@@ -649,7 +651,7 @@ void GetData()
     RTC_hour += atoi(b.c_str()) + 1;
     ESP.rtcUserMemoryWrite(RTCdz_hour, &RTC_hour, sizeof(RTC_hour));
     Serial.print("get the time :"); Serial.println(RTC_hour);
-    display_partialLine(7, "Failed to obtain NTP time. Use weather time instead");     // 获取NTP时间失败,改用天气时间
+    //display_partialLine(7, "Failed to obtain NTP time. Use weather time instead");     // 获取NTP时间失败,改用天气时间
   } 
 }
 
@@ -759,6 +761,8 @@ String week_calculate(int y, int m, int d)
   else return "计算出错";
   //其中1~6表示周一到周六 0表示星期天
 }
+
+#if 0       //时钟旧代码
 void display_clock() //时钟显示界面
 {
   static uint32_t tep,tep1;
@@ -782,117 +786,54 @@ void display_clock() //时钟显示界面
   paint.SetWidth(70);   //70大字    12
   paint.SetHeight(100);   //160       65
    paint.SetRotate(ROTATE_270);
-  paint.Clear(UNCOLORED);
-  paint.DrawStringAt(0,0, time_string, &myFont, COLORED);     //&Font12
+  paint.Clear(UNCOLORED);             // 清除图像
+  paint.DrawStringAt(0,0, time_string, &myFont, COLORED);     //&Font12 //这将在帧缓冲区上显示一个字符串，但不会刷新
+  epd.SetFrameMemory(paint.GetImage(), 25 , 85, paint.GetWidth(), paint.GetHeight());
+  epd.DisplayFrame();   //更新显示
   epd.SetFrameMemory(paint.GetImage(), 25 , 85, paint.GetWidth(), paint.GetHeight());
   epd.DisplayFrame();
-    epd.SetFrameMemory(paint.GetImage(), 25 , 85, paint.GetWidth(), paint.GetHeight());
-  epd.DisplayFrame();
-  // set_flag = 1;
 
-
-  // //0-正常 1-首次获取网络时间失败 2-每10分钟的wifi连接超时 3-每10分钟的获取网络时间失败
-  // delay(500);
-  // if (RTC_ntpTimeError == 1) {
-  //   display_partialLine(6, "NTP服务器连接失败");
-  //   display_bitmap_sleep(" ");
-  //   esp_sleep(0);
-  // }
-
-  // //每xx次局刷全刷一次
-  // if (RTC_jsjs == 0) display.init(0, 1, 10, 0);
-  // else               display.init(0, 0, 10, 0);
-  // RTC_jsjs++; //局刷计数
-  // ESP.rtcUserMemoryWrite(RTCdz_jsjs, &RTC_jsjs, sizeof(RTC_jsjs));
-  // display.setPartialWindow(0, 0, display.width(), display.height()); //设置局部刷新窗口
-  // display.firstPage();
-  // do
-  // {
-  //   //************************ 时间显示 ************************
-  //   if (eepUserSet.inAWord_mod == 2 || eepUserSet.inAWord_mod == 3)
-  //   {
-  //     u8g2Fonts.setFont(u8g2_font_logisoso78_tn);
-  //     //拼装时间 小时和分,不够两位数需要补0
-  //     String hour, minute, assembleTime;
-  //     if (RTC_hour < 10)   hour = "0" + String(RTC_hour);
-  //     else                 hour = String(RTC_hour);
-  //     if (RTC_minute < 10) minute = "0" + String(RTC_minute);
-  //     else                 minute = String(RTC_minute);
-  //     assembleTime = hour + ":" + minute;
-
-  //     int8_t sz_x = 0; //显示位置X轴的偏移量
-  //     if (RTC_hour >= 10 && RTC_hour <= 19) sz_x = -3; //10-19点
-  //     else sz_x = 2;
-  //     //显示时间
-  //     u8g2Fonts.setCursor(sz_x, 95);
-  //     u8g2Fonts.print(assembleTime);
-  //     //画一条垂直线
-  //     display.drawLine(230, 7, 230, 103, 0);
-  //   }
-  //   if (eepUserSet.inAWord_mod == 2 && RTC_clock_code == 200) //需要显示天数倒计
-  //   {
-    
-
-  //  }
-
-    
-  //    else if (eepUserSet.inAWord_mod == 3) //b站粉丝
-  //    {
-
-  //   }
-  //   else //不需要天数倒计时和B粉显示
-  //   {
-  //     u8g2Fonts.setFont(u8g2_font_logisoso92_tn); //时钟用的超大字体 u8g2_font_logisoso78_tn
-  //     //拼装时间 小时和分,不够两位数需要补0
-  //     String hour, minute, assembleTime;
-  //     if (RTC_hour < 10)   hour = "0" + String(RTC_hour);
-  //     else                 hour = String(RTC_hour);
-  //     if (RTC_minute < 10) minute = "0" + String(RTC_minute);
-  //     else                 minute = String(RTC_minute);
-  //     assembleTime = hour + ":" + minute;
-
-  //     uint8_t sz_x = 0; //显示位置X轴的偏移量
-  //     if (RTC_hour >= 10 && RTC_hour <= 19) sz_x = 6; //10-19点
-  //     else sz_x = 14;
-  //     //显示时间
-  //     u8g2Fonts.setCursor(sz_x, 100);
-  //     u8g2Fonts.print(assembleTime);
-  //     //Serial.print("RTC_hour:"); Serial.println(RTC_hour);
-  //     //Serial.print("RTC_minute:"); Serial.println(RTC_minute);
-  //     //Serial.print("RTC_seconds:"); Serial.println(RTC_seconds);
-  //   }
-  //   //************************ 电池电量显示 ************************ 电池电量0-电压 1-百分比
-
-
-  // } while (display.nextPage());
-
-  // //首次秒数对齐、计算休眠时间
-  // int32_t sleep_num = 0;
-  // clockTime1 = millis();
-  // // if (RTC_8025T_error != 0) //时钟芯片不存在
-  // // {
-  // //   if (RTC_cq_cuont >= eepUserSet.clockJZJG)    sleep_num = eepUserSet.clockCompensate + 60000 - (RTC_seconds * 1000) - ((clockTime1 - clockTime0) + RTC_clockTime2);
-  // //   else if (RTC_seconds != 0) sleep_num = 60000 - (RTC_seconds * 1000) - ((clockTime1 - clockTime0) + RTC_clockTime2);
-  // //   else if (RTC_jsjs == eepUserSet.clockQSJG + 1)    sleep_num = 60000 - ((clockTime1 - clockTime0) + RTC_clockTime2);
-  // //   else sleep_num = 60000 + eepUserSet.clockCompensate;
-  // //   //如果计算出来的休眠值小于0
-  // //   if (sleep_num <= 0)
-  // //   {
-  // //     clockTime3 = abs(sleep_num);
-  // //     sleep_num = 100;
-  // //   }
-  // // }
-
-  // /*Serial.print("sleep_num:"); Serial.println(sleep_num);
-  //   Serial.print("RTC_ntpTimeError:"); Serial.println(RTC_ntpTimeError);
-  //   Serial.print("RTC_cq_cuont:"); Serial.println(RTC_cq_cuont);
-  //   Serial.print("RTC_jsjs:"); Serial.println(RTC_jsjs);
-  //   Serial.print("RTC_clockTime2:"); Serial.println(RTC_clockTime2);*/
-  // //Serial.print("sleep_num:"); Serial.println(sleep_num);
-  // //Serial.print("sleep_num:"); Serial.println(sleep_num);
-  // //Serial.print("sleep_num:"); Serial.println(sleep_num);
-  // //  esp_sleep(sleep_num);
 }
+
+#endif 
+void display_clock() //时钟显示界面
+{
+    //0-正常 1-首次获取网络时间失败 2-每10分钟的wifi连接超时 3-每10分钟的获取网络时间失败
+
+
+  //每xx次局刷全刷一次
+  if (RTC_jsjs == 0) display.init(0, 1, 10, 0);
+  else               display.init(0, 0, 10, 0);
+  RTC_jsjs++; //局刷计数
+
+  ESP.rtcUserMemoryWrite(RTCdz_jsjs, &RTC_jsjs, sizeof(RTC_jsjs));
+  display.setPartialWindow(0, 0, 230,150); //设置局部刷新窗口
+  display.firstPage();
+  do
+  {
+    //************************ 时间显示 ************************
+
+      u8g2Fonts.setFont(u8g2_font_logisoso42_tn);
+      //拼装时间 小时和分,不够两位数需要补0
+      String hour, minute, assembleTime;
+      if (RTC_hour < 10)   hour = "0" + String(RTC_hour);
+      else                 hour = String(RTC_hour);
+      if (RTC_minute < 10) minute = "0" + String(RTC_minute);
+      else                 minute = String(RTC_minute);
+      assembleTime = hour + ":" + minute;
+
+      int8_t sz_x = 0; //显示位置X轴的偏移量
+      if (RTC_hour >= 10 && RTC_hour <= 19) sz_x = -3; //10-19点
+      else sz_x = 2;
+      //显示时间
+      u8g2Fonts.setCursor(sz _x, 95);
+      u8g2Fonts.print(assembleTime);
+      
+
+  }while (display.nextPage());
+}
+  
+
 void display_main()
 {
    //u8g2Fonts.setFontMode(1);
@@ -1268,15 +1209,15 @@ void get_wifi()     //连接 wifi
     { wifi_flag = 0;   //表示wifi连接失败
       Serial.println("Failed to connect wifi within 5s ");    // 5s内未成功连接wifi （编码显示问题 用串口输出的话 utf-8 会乱码 ，改GBK的话 显示器乱码 + 注释乱码）
       Serial.println("Press key5 to enter reading mode");   // 按下key5键，进入阅读模式
-      display_partialLine(1,"5s内未成功连接wifi");
-      display_partialLine(3,"按下key5键,进入阅读模式");
+      // display_partialLine(1,"5s内未成功连接wifi");
+      // display_partialLine(3,"按下key5键,进入阅读模式");
       break;
     }
   }
 
   if( wifi_flag == 1 ) {   //表示wifi连接成功
-  display_partialLine(1,"wifi连接成功");
-  display_partialLine(3,"获取时间和天气中...");
+  // display_partialLine(1,"wifi连接成功");
+  // display_partialLine(3,"获取时间和天气中...");
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
@@ -1657,29 +1598,20 @@ void select_page_ui_process(uint8_t y)
 	    BWClearScreen();   //黑一下刷新屏幕
       BWClearScreen();   //黑一下刷新屏幕
 
-      display_partialLine(1,"时钟");     
-
-      display_partialLine(5,"游戏");
-      display_partialLine_BJZ(4,"→",20,4);
+      // display_partialLine(1,"时钟");     
+      display_main_select();
+      // display_partialLine(5,"游戏");
+      // display_partialLine_BJZ(4,"→",20,4);
       
       ui_loging_flag = 1;
 	}
 }
 
 
-void display_main_home()
+void display_main_home(String detail)
 {
-   //u8g2Fonts.setFontMode(1);
     display.setFullWindow(); //设置全屏刷新 height
     display.firstPage();
-
-    GetData();      // 获取数据
-
-    //display.fillScreen(heise);  // 填充屏幕
-    //display.display(1);         // 显示缓冲内容到屏幕，用于全屏缓冲
-    //display.fillScreen(baise);  // 填充屏幕
-    //display.display(1);         // 显示缓冲内容到屏幕，用于全屏缓冲
-
   do
   {  
 
@@ -1693,14 +1625,13 @@ void display_main_home()
       else                 minute = String(RTC_minute);
 
     //提取最后更新时间的 仅提取 小时:分钟
-      u8g2Fonts.setCursor(200, 16); //实时时间-小时
+      u8g2Fonts.setCursor(10, 16); //实时时间-小时
       u8g2Fonts.print(hour);
-      u8g2Fonts.setCursor(230, 16); //实时时间-小时
+      u8g2Fonts.setCursor(37, 16); //实时时间-小时
       u8g2Fonts.print(minute);
-      u8g2Fonts.setCursor(220, 16); //实时时间-小时
+      u8g2Fonts.setCursor(25, 16); //实时时间-小时
       u8g2Fonts.print(":");
 
-   // display_tbpd();
     //****** 显示小图标和详情信息 ******
     display.drawInvertedBitmap(80, 12, Bitmap_ACE,42, 85, heise);
     display.drawInvertedBitmap(122, 12 , Bitmap_ACErig,41, 85, heise);
@@ -1709,13 +1640,129 @@ void display_main_home()
     display.drawLine(0, 100, 250, 100, heise);
     u8g2Fonts.setFont(chinese_gb2312);
     u8g2Fonts.setCursor(50, 120);  //显示实况温度
-    u8g2Fonts.print("单击左键以进入菜单...");
 
-    display.drawInvertedBitmap(10,5,Bitmap_bat3,21,12,heise);
+    const char* detail_c = detail.c_str();                         //String转换char
+    u8g2Fonts.print(detail_c);
+
+    display.drawInvertedBitmap(220,5,Bitmap_bat3,21,12,heise);   // 电量图标
+
+    if(wifi_flag == 1)  // wifi 连接成功
+    {
+      display.drawInvertedBitmap(180,2,Bitmap_wifilink,11,22,heise);
+      display.drawInvertedBitmap(191,2,Bitmap_wifilink_rig,11,22,heise);
+      display.drawLine(180, 2, 220, 2, baise); //画水平线
+      display.drawLine(180, 3, 220, 3, baise); //画水平线
+      display.drawLine(180, 4, 220, 4, baise); //画水平线
+    }
+    else
+    {
+      display.drawInvertedBitmap(180,2,Bitmap_wifidk,26,22,heise);
+    } 
 
   }while(display.nextPage());
 
       
   // while (display.nextPage());
+}
+
+
+void display_main_select(void)
+{
+  display.setFullWindow(); //设置全屏刷新 height
+    display.firstPage();
+  do
+  {  
+
+
+
+    //****** 显示小图标和详情信息 ******
+    display.drawInvertedBitmap(10, 9, Bitmap_ACE,42, 85, heise);
+    display.drawInvertedBitmap(52, 9 , Bitmap_ACErig,41, 85, heise);
+    display.drawLine(0, 9, 100, 9, baise); //画水平线
+    display.drawLine(100, 12, 100, 88, heise); //画水平线
+    //display.drawLine(163, 0, 163, 100, baise);
+    display.drawLine(0, 100, 250, 100, heise);
+    u8g2Fonts.setFont(chinese_gb2312);
+    u8g2Fonts.setCursor(50, 120);  //显示实况温度
+    u8g2Fonts.print("单击以选择,双击以进入...");
+
+    u8g2Fonts.setCursor(150, 15);  //显示实况温度
+    u8g2Fonts.print("时钟");
+    u8g2Fonts.setCursor(150, 35);  //显示实况温度
+    u8g2Fonts.print("天气");
+    u8g2Fonts.setCursor(150, 55);  //显示实况温度
+    u8g2Fonts.print("配置");
+    u8g2Fonts.setCursor(150, 75);  //显示实况温度
+    u8g2Fonts.print("阅读");
+    u8g2Fonts.setCursor(150, 95);  //显示实况温度
+    u8g2Fonts.print("游戏");
+
+
+    display.drawInvertedBitmap(220,5,Bitmap_bat3,21,12,heise);   // 电量图标
+
+
+
+  }while(display.nextPage());
+ 
+}
+
+// 箭头显示
+void display_pninter(uint8_t subindex)
+{
+  int y = 15 ;
+  
+ // FixedRefresh(); //屏幕初始化及定次刷新
+  switch (subindex)
+  {
+    case 1:
+    {
+      y = 15;
+      break;
+    }
+
+    case 2:
+    {
+      y = 35;
+      break;
+    }
+
+    case 3:
+    {
+      y = 55;
+      break;
+    }
+
+      case 4:
+    {
+      y = 75;
+      break;
+    }
+
+      case 5:
+    {
+      y = 95;
+      break;
+    }
+    default:
+      break;
+  }
+  u8g2Fonts.setFont(chinese_gb2312);
+  display.setPartialWindow(112, 0, 24, 96); //设置局部刷新窗口
+  display.firstPage();
+
+  do{
+      display.drawCircle(120, y - 5 ,4,0);     // 画圈
+  }while(display.nextPage());
+  //  display.drawLine(x1 - 2, y2 + 2, x1 + 60, y2 + 2, 0);
+  // paint.SetWidth(12);   //70大字    12
+  // paint.SetHeight(12);   //160       65
+  //  paint.SetRotate(ROTATE_270);
+  // //paint.Clear(UNCOLORED);             // 清除图像
+  // paint.DrawStringAt(0,0, "o", &myFont, COLORED);     //&Font12 //这将在帧缓冲区上显示一个字符串，但不会刷新
+  // epd.SetFrameMemory(paint.GetImage(), 120 , 85, paint.GetWidth(), paint.GetHeight());
+  // epd.DisplayFrame();   //更新显示
+  // epd.SetFrameMemory(paint.GetImage(), 120 , 85, paint.GetWidth(), paint.GetHeight());
+  // epd.DisplayFrame();
+  // set_flag = 1;
 }
 
