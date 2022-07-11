@@ -275,6 +275,8 @@ void BWClearScreen()    //黑一下清屏
   }
   while (display.nextPage());
 }
+
+
 void display_setup() //天气开机连接画面
 {
   //读取天气模式开机显示 0-不显示 其他值-显示
@@ -725,13 +727,13 @@ void display_setup() //天气开机连接画面
 //   // esp_sleep(sleep_num);
 // }
 
-/*void display_Bitmap() //显示开机图片
+void display_Bitmap() //显示开机图片
   {
   display.setPartialWindow(0, 0, 296, 120); //设置局部刷新窗口
   display.fillScreen(baise);
   //display.drawInvertedBitmap(0, 0, Bitmap_setup1, 296, 128, heise); //显示开机图片
   display.display(1); // full update
-  }*/
+  }
 //setPartialWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t h)
 //根据实际旋转使用参数。
 //x和w应该是8的倍数，对于旋转0或2，

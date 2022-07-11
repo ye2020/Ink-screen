@@ -18,7 +18,7 @@
 
 #include "bsp_button.h"
 
-
+extern uint8_t ui_loging_flag;
 // 对应数据类型定义
 typedef unsigned int   menu_u32;
 typedef unsigned short menu_u16;
@@ -99,6 +99,7 @@ void setting_page_process(button_status_e Key5Value , button_status_e Key0Value)
 void Menu_Select_main(button_status_e Key5Value , button_status_e Key0Value);
 void language_page_process(button_status_e Key5Value, button_status_e Key0Value);
 void word_page_process(button_status_e Key5Value, button_status_e Key0Value);
+uint8_t return_UI_loging_flag(void);
 
 
 

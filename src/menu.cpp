@@ -32,12 +32,14 @@
 #include "menu.h"
 #include <Arduino.h>
 #include "menu_ui.h"
+#include "main.h"
 
 // 定义菜单索引变量
 Key_Index sub_index;
 
 static key_value_e Key5Value_transition_function(button_status_e button5, button_status_e button0);
 void Menu_Select_Item(menu_i32 current_index, button_status_e Key5Value, button_status_e Key0Value);
+uint8_t ui_loging_flag = 0;				//将ui加载标志位置0，表示允许加载ui
 
 //菜单操作表定义
 static OP_MENU_PAGE g_opStruct[] =
@@ -154,17 +156,13 @@ static key_value_e Key5Value_transition_function(button_status_e button5, button
 		break;
 	}
 
-	/**************** 右按键对应键值 *******************/
-	// switch(buttton0)
-	// {
-
-	// default:
-	// 	break;
-	// }
-
 	return KEY_none;
 }
 
+uint8_t return_UI_loging_flag(void)
+{
+	return ui_loging_flag;
+}
 
 /************************************************************************************************************************************/
 /*********************************************************** 进程处理 **********************************************************/
@@ -178,12 +176,14 @@ static key_value_e Key5Value_transition_function(button_status_e button5, button
  */
 void main_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
+	main_page_ui_process(0);
 	switch (Key5Value)
 	{
 	// 单击进入菜单选择
 	case button_click:
 	{
 		// 进入选择界面
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
 		Enter_Page(SELECT_PAGE, Key5Value, Key0Value);
 		break;
 	}
@@ -191,6 +191,7 @@ void main_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	// 长按进入设置模式
 	case button_longPressStart:
 	{
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
 		Enter_Page(SETTING_PAGE, Key5Value, Key0Value);
 		break;
 	}
@@ -250,6 +251,8 @@ void main_page_process(button_status_e Key5Value, button_status_e Key0Value)
 void select_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
 	Serial.println("select status");
+	select_page_ui_process(0);
+
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
 	case KEY_dowm:
@@ -274,6 +277,7 @@ void select_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	{
 		Serial.println("Enter the choice");
 		Serial.println((sub_index.select_current_index));
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
 		Enter_Page(sub_index.select_current_index, Key5Value, Key0Value);
 		break;
 	}
@@ -287,7 +291,8 @@ void select_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_esc:
 	{	//返回上一页
-		Enter_Page(MAIN_PAGE,Key5Value,Key0Value);
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
+		Enter_Page(MAIN_PAGE,button_none,button_none);
 		break;
 	}
 	default:
@@ -331,6 +336,7 @@ void setting_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	{
 		Serial.println("Enter the choice");
 		Serial.println((sub_index.setting_current_index));
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
 		Enter_Page((sub_index.setting_current_index), Key5Value, Key0Value);
 		break;
 	}
@@ -344,7 +350,8 @@ void setting_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_esc:
 	{	//返回上一页
-		Enter_Page(MAIN_PAGE,Key5Value,Key0Value);
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
+		Enter_Page(MAIN_PAGE,button_none,button_none);
 		break;
 	}
 	default:
@@ -361,6 +368,8 @@ void setting_page_process(button_status_e Key5Value, button_status_e Key0Value)
 void weather_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
 	Serial.println("weather status");
+
+	weather_page_ui_process();
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
 
@@ -373,7 +382,8 @@ void weather_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_esc:
 	{	//返回上一页
-		Enter_Page(SELECT_PAGE,Key5Value,Key0Value);
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
+		Enter_Page(SELECT_PAGE,button_none,button_none);
 		break;
 	}
 	default:
@@ -403,7 +413,8 @@ void clock_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_esc:
 	{	//返回上一页
-		Enter_Page(SELECT_PAGE,Key5Value,Key0Value);
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
+		Enter_Page(SELECT_PAGE,button_none,button_none);
 		break;
 	}
 	default:
@@ -432,7 +443,8 @@ void configuration_page_process(button_status_e Key5Value, button_status_e Key0V
 
 	case KEY_esc:
 	{	//返回上一页
-		Enter_Page(SELECT_PAGE,Key5Value,Key0Value);
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
+		Enter_Page(SELECT_PAGE,button_none,button_none);
 		break;
 	}
 	default:
@@ -461,7 +473,8 @@ void read_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_esc:
 	{	//返回上一页
-		Enter_Page(SELECT_PAGE,Key5Value,Key0Value);
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
+		Enter_Page(SELECT_PAGE,button_none,button_none);
 		break;
 	}
 	default:
@@ -490,6 +503,7 @@ void game_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_esc:
 	{	//返回上一页
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
 		Enter_Page(SELECT_PAGE,Key5Value,Key0Value);
 		break;
 	}
@@ -520,7 +534,8 @@ void language_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_esc:
 	{	//返回上一页
-		Enter_Page(SETTING_PAGE,Key5Value,Key0Value);
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
+		Enter_Page(SETTING_PAGE,button_none,button_none);
 		break;
 	}
 	default:
@@ -551,7 +566,8 @@ void word_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_esc:
 	{	//返回上一页
-		Enter_Page(SETTING_PAGE,Key5Value,Key0Value);
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
+		Enter_Page(SETTING_PAGE,button_none,button_none);
 		break;
 	}
 	default:

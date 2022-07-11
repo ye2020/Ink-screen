@@ -13,6 +13,10 @@
   ****************************** Y.Z.T. *****************************************
   */
 #include "menu_ui.h"
+#include "main.h"
+#include "GxEPD2_BW.h"
+#include "Display_setup.h"
+
 
 //主菜单初始化
 void Menu_Main_Init(void)
@@ -23,6 +27,13 @@ void Menu_Main_Init(void)
 	sub_index.setting_current_index = 8;
 	sub_index.select_current_index = 1;
 	sub_index.Current_Page = MAIN_PAGE;
+
+  display.fillScreen(baise);  // 填充屏幕
+	display.drawInvertedBitmap(50, 3, Bitmap_m, 45, 45, heise);
+   BW_refresh();          //黑白刷新一次
+
+
+
 	//.....刷新回主页面的UI和状态(等待添加初始化菜单)
 }
 
@@ -105,23 +116,29 @@ void Enter_Page(menu_i32 index, button_status_e Key5Value , button_status_e Key0
 //主页面UI处理
 void main_page_ui_process(menu_u8 index)
 {
-	switch (index)
+	if(ui_loging_flag == 0)		// 允许ui加载
 	{
-	case 0:
-		break;
-	case 1:
-		break;
-	case 2:
-		break;
-	case 3:
-		break;
-	case 4:
-		break;
-	case 5:
-		break;
-	case 6:
-		break;
-	default:
-		break;
+		BW_refresh();          //黑白刷新一次
+		BW_refresh();          //黑白刷新一次
+
+		display_main_home();
+
+		ui_loging_flag = 1;
 	}
 }
+
+
+//天气页面UI处理
+void weather_page_ui_process(void)
+{
+	if(ui_loging_flag == 0)
+	{
+		BW_refresh();          //黑白刷新一次
+		BW_refresh();
+		get_time_weather();  //如果wifi_flag 为1，则可以刷新时间和天气
+
+		ui_loging_flag = 1;
+	}
+}
+
+

@@ -105,7 +105,6 @@ void read_filename();    //读取SD卡文件的名字，并且显示
 void show_type1(uint32_t now1_i);    //逐行显示    （效果好，速度较快）
 void show_type2(uint32_t now2_i);     //显示英文
 
-void get_time_weather();     //读取时间和天气 并且显示
 void get_wifi();
 
 
@@ -231,6 +230,82 @@ Paint paint(image, 0, 0);
 Epd epd;
 unsigned long time_start_ms;
 unsigned long time_now_s;
+
+//图标声明
+extern const unsigned char Bitmap_setup0[] PROGMEM;
+extern const unsigned char Bitmap_xiaohei[] PROGMEM;
+extern const unsigned char Bitmap_byk[] PROGMEM;
+extern const unsigned char Bitmap_byx[] PROGMEM;
+extern const unsigned char Bitmap_567[] PROGMEM;
+extern const unsigned char Bitmap_wlq1[] PROGMEM;
+extern const unsigned char Bitmap_wlq2[] PROGMEM;
+extern const unsigned char Bitmap_wlq3[] PROGMEM;
+extern const unsigned char Bitmap_wlq4[] PROGMEM;
+extern const unsigned char Bitmap_qt[] PROGMEM;
+extern const unsigned char Bitmap_dy[] PROGMEM;
+extern const unsigned char Bitmap_yt[] PROGMEM;
+extern const unsigned char Bitmap_zheny[] PROGMEM;
+extern const unsigned char Bitmap_lzy[] PROGMEM;
+extern const unsigned char Bitmap_lzybbb[] PROGMEM;
+extern const unsigned char Bitmap_xy[] PROGMEM;
+extern const unsigned char Bitmap_zhongy[] PROGMEM;
+extern const unsigned char Bitmap_dayu[] PROGMEM;
+extern const unsigned char Bitmap_by[] PROGMEM;
+extern const unsigned char Bitmap_dby[] PROGMEM;
+extern const unsigned char Bitmap_tdby[] PROGMEM;
+extern const unsigned char Bitmap_dongy[] PROGMEM;
+extern const unsigned char Bitmap_yjx[] PROGMEM;
+extern const unsigned char Bitmap_zhenx[] PROGMEM;
+extern const unsigned char Bitmap_xx[] PROGMEM;
+extern const unsigned char Bitmap_zhongx[] PROGMEM;
+extern const unsigned char Bitmap_dx[] PROGMEM;
+extern const unsigned char Bitmap_bx[] PROGMEM;
+extern const unsigned char Bitmap_fc[] PROGMEM;
+extern const unsigned char Bitmap_ys[] PROGMEM;
+extern const unsigned char Bitmap_scb[] PROGMEM;
+extern const unsigned char Bitmap_w[] PROGMEM;
+extern const unsigned char Bitmap_m[] PROGMEM;
+extern const unsigned char Bitmap_f[] PROGMEM;
+extern const unsigned char Bitmap_jf[] PROGMEM;
+extern const unsigned char Bitmap_ljf[] PROGMEM;
+extern const unsigned char Bitmap_wz[] PROGMEM;
+extern const unsigned char Bitmap_qt_ws[] PROGMEM;
+extern const unsigned char Bitmap_yt_wz[] PROGMEM;
+extern const unsigned char Bitmap_dy_wz[] PROGMEM;
+extern const unsigned char Bitmap_zy_wz[] PROGMEM;
+extern const unsigned char Bitmap_zx_wz[] PROGMEM;
+extern const unsigned char Bitmap_weizhi[] PROGMEM;
+extern const unsigned char Bitmap_zhuangtai[] PROGMEM;
+extern const unsigned char Bitmap_gengxing[] PROGMEM;
+extern const unsigned char Bitmap_riqi[] PROGMEM;
+extern const unsigned char Bitmap_batlow[] PROGMEM;
+extern const unsigned char Bitmap_humidity[] PROGMEM;
+extern const unsigned char Bitmap_fx[] PROGMEM;
+extern const unsigned char Bitmap_tempSHT30[] PROGMEM;
+extern const unsigned char Bitmap_humiditySHT30[] PROGMEM;
+extern const unsigned char Bitmap_peiwangMod[] PROGMEM;
+extern const unsigned char Bitmap_shizhongMod[] PROGMEM;
+extern const unsigned char Bitmap_yueduMod[] PROGMEM;
+extern const unsigned char Bitmap_tianqiMod[] PROGMEM;
+extern const unsigned char Bitmap_txtMain[] PROGMEM;
+extern const unsigned char Bitmap_yxm_yzq_50[] PROGMEM;
+extern const unsigned char Bitmap_dlsd[] PROGMEM;
+extern const unsigned char Bitmap_bat1[] PROGMEM;
+extern const unsigned char Bitmap_bat2[] PROGMEM;
+extern const unsigned char Bitmap_bat3[] PROGMEM;
+extern const unsigned char Bitmap_sjjg[] PROGMEM;
+extern const unsigned char Bitmap_dlxtb[] PROGMEM;
+extern const unsigned char Bitmap_ljdk[] PROGMEM;
+extern const unsigned char Bitmap_pwewm[] PROGMEM;
+extern const unsigned char Bitmap_dfsn[] PROGMEM;
+extern const unsigned char Bitmap_zdy[] PROGMEM;
+extern const unsigned char Bitmap_jintian[] PROGMEM;
+extern const unsigned char Bitmap_bilbil[] PROGMEM;
+extern const unsigned char Bitmap_kon[] PROGMEM;
+extern const unsigned char Bitmap_wifidk[] PROGMEM;
+extern const unsigned char Bitmap_ACE[]  PROGMEM;
+extern const unsigned char Bitmap_ACErig[]  PROGMEM;
+
 void auto_eeprom()
 {
   // //自动计算需要用多少eeprom数量
@@ -313,10 +388,10 @@ void setup()   //上电初始化
  
   display_partialLine(1,"wifi连接中...");
   display_partialLine(3,"请等待5s");
+  display.drawInvertedBitmap(50,3,Bitmap_m,45,45,heise); //drawInvertedBitmap
   auto_eeprom();
-  // pinMode(key5, INPUT_PULLUP);     //设置gpio5为输入，按下为0   key0 按下为0
- //pinMode(key5, INPUT_PULLUP);
-  //get_wifi();                         // 只能连接2.4G频段
+
+  get_wifi();                         // 只能连接2.4G频段
   button_init();            // 按键初始化
   Menu_Main_Init();
 }
@@ -328,192 +403,168 @@ void loop()   //主循环
   
 }
 
-// void loop()   //主循环
-// {
-//   /****************** 页面1 （主UI显示）********************/
-//   if( page_flag == 1)   //如果连接到wifi,并且在第一界面,就读API和显示时间天气
-//   {
+#if 0     // 旧代码（主函数）
+void loop()   //主循环
+{
+  /****************** 页面1 （主UI显示）********************/
+  if( page_flag == 1)   //如果连接到wifi,并且在第一界面,就读API和显示时间天气
+  {
    
-//     do
-//     { Serial.println("interface : 1");    // 界面1
-//       get_time_weather();  //如果wifi_flag 为1，则可以刷新时间和天气
-//       page_flag = 2;
-//     }while(digitalRead(key5) == 1);  //按下key5，才会退出界面1，进入界面2
-//    BW_refresh();          //黑白刷新一次
-//    BW_refresh();
-//   } 
+    do
+    { Serial.println("interface : 1");    // 界面1
+     get_time_weather();  //如果wifi_flag 为1，则可以刷新时间和天气
+      page_flag = 2;
+    }while(digitalRead(key5) == 1);  //按下key5，才会退出界面1，进入界面2
+   BW_refresh();          //黑白刷新一次
+   BW_refresh();
+  } 
 
 
-//   /****************** 页面2 （显示时钟）********************/
-//   if(page_flag==2)
-//   {
+  /****************** 页面2 （显示时钟）********************/
+  if(page_flag==2)
+  {
     
-//     do
-//     {Serial.println("interface : 2 ");     
-//       if(incount == 0)        //  获取数据（天气实况数据，未来天气数据）
-//       {
-//        GetData();
-//        incount++;
-//       }
-//       display_clock();        // 时钟显示界面
-//     }while(digitalRead(key5) == 1);
-//     epd.ClearFrameMemory(0xFF);         // 用指定的颜色清除帧内存，且不更新显示（黑色）
-//     epd.DisplayFrame();                 // 更新显示
+    do
+    {Serial.println("interface : 2 ");     
+      if(incount == 0)        //  获取数据（天气实况数据，未来天气数据）
+      {
+       GetData();
+       incount++;
+      }
+      display_clock();        // 时钟显示界面
+    }while(digitalRead(key5) == 1);
+    epd.ClearFrameMemory(0xFF);         // 用指定的颜色清除帧内存，且不更新显示（黑色）
+    epd.DisplayFrame();                 // 更新显示
 
-//       if (epd.Init(lut_partial_update) != 0)  // 调用外围参数失败
-//       {
-//       Serial.print("e-Paper init failed");
-//       return;
-//       }
-//   epd.ClearFrameMemory(0xFF);   // 用指定的颜色清除帧内存（黑色）
-//   epd.DisplayFrame();           // 更新显示
-//      BWClearScreen();           // 黑一下清屏
-//     //  clear_ping();  //为显示界面2 ，做清屏准备
-//     page_flag=3;
-//   }
+      if (epd.Init(lut_partial_update) != 0)  // 调用外围参数失败
+      {
+      Serial.print("e-Paper init failed");
+      return;
+      }
+  epd.ClearFrameMemory(0xFF);   // 用指定的颜色清除帧内存（黑色）
+  epd.DisplayFrame();           // 更新显示
+     BWClearScreen();           // 黑一下清屏
+    //  clear_ping();  //为显示界面2 ，做清屏准备
+    page_flag=3;
+  }
 
 
-//   /****************** 页面3 （显示时钟）********************/
+  /****************** 页面3 （显示时钟）********************/
 
-//    if( page_flag == 3 )   //第一个条件是确保没连上wifi下,能通过key5进入界面2，第二个条件确保能充界面1里进入界面2
-//   { 
-//     read_filename();    //读SD卡文件   里面有先对SD卡挂载是否成功检查
-//     pinMode(key5, INPUT_PULLUP);
-//     page_flag =4; 
-//     unsigned char flag=1; 
-//   do{ 
-//     Serial.println("界面3"); 
-//     if(select_file == 1)
-//     display_partialLine_BJZ(6, select1,150, 1);
-//     if(flag == 1) {
-//      if(digitalRead(key5) == 0)    //用来选择打开哪个File  //默认为1
-//      {
-//       do{Serial.println("在select里");
-//       if(digitalRead(key5) == 0)
-//       {
-//         key5_flag+=1;
-//         if(key5_flag==1) { Serial.println(1); select_file = 1; display_partialLine_BJZ(6, select1,150, 1);    }
-//         if(key5_flag==2) { Serial.println(2); select_file = 2; display_partialLine_BJZ(6, select2,150, 1);  }
-//         if(key5_flag>=3) key5_flag = 0; 
-//       }
-//       }while(digitalRead(key0) == 1);    //在选择file下，按下key0退出
-//       flag = 0;
-//       Serial.println("退出select"); 
-//      } }
-//     page_flag = 4;
-//     if(digitalRead(key0) == 0)   //返回界面1
-//     { 
-//       do{
-//       page_flag = 1;get_wifi_flag = 1;  //1.是放它放回界面1，2.是让他重新连一次wifi
-//       wifi_flag = 1;to_one_flag = 1;  // 1.是为了连接成功用。2.重界面2 返回界面1 ，就让他清一下屏幕的标志  （放置重复刷新屏幕）    
-//       Serial.println("在key0的循环里");
-//       break;
-//       }while(digitalRead(key5) == 1); 
-//     }
-//     Serial.println(page_flag);
-//     }while(digitalRead(key5) == 1 );   //按下则进入界面3 
-//   }
-//    if(page_flag == 4  )        //进入页面3
-//   { char flag=0;
-//     sdBeginCheck();   //SD卡挂载检查
-//     if(select_file == 2) {  file_name = "word.txt"; }
-//     if(select_file == 1) {  file_name = "xs.txt"; }
-//      read_file_data(); //读取SD卡文件内容，保存到SD_data中
-//     do{
-//     Serial.println("界面4");
-//     if(digitalRead(key5) == 0)
-//       {
-//       BWClearScreen();   //黑一下刷新屏幕
-//         if( select_file == 1)
-//        show_type1(now_read1);  //传当前阅读位置给它   三体
-//         if(select_file == 2 )
-//        show_type2(now_read2);     //单词
-//       }
-//     }while(digitalRead(key0) == 1);
-//     delay(1000);  //防止直接退出下一个do while
-//   do
-//   {
-//     Serial.println("选择界面1 or 界面2");
-//     Serial.println("按下key5则直接返回界面3");
-//     Serial.println("按下key0则返回界面1");
-//     page_flag = 3; get_wifi_flag =0;
-//     if(digitalRead(key0) == 0) 
-//     do
-//     {
-//       Serial.println("返回第一界面中");
-//       page_flag = 1;get_wifi_flag ==1; flag=1; break;
-//     }while(1);
-//     if(flag==1) { flag=0;break; }
-//   } while (digitalRead(key5) == 1); //按下key5退出这个
-//   BWClearScreen();
-//   }
-//   Serial.println("在loop里"); Serial.println(page_flag);  Serial.println();
+   if( page_flag == 3 )   //第一个条件是确保没连上wifi下,能通过key5进入界面2，第二个条件确保能充界面1里进入界面2
+  { 
+    read_filename();    //读SD卡文件   里面有先对SD卡挂载是否成功检查
+    pinMode(key5, INPUT_PULLUP);
+    page_flag =4; 
+    unsigned char flag=1; 
+  do{ 
+    Serial.println("界面3"); 
+    if(select_file == 1)
+    display_partialLine_BJZ(6, select1,150, 1);
+    if(flag == 1) {
+     if(digitalRead(key5) == 0)    //用来选择打开哪个File  //默认为1
+     {
+      do{Serial.println("在select里");
+      if(digitalRead(key5) == 0)
+      {
+        key5_flag+=1;
+        if(key5_flag==1) { Serial.println(1); select_file = 1; display_partialLine_BJZ(6, select1,150, 1);    }
+        if(key5_flag==2) { Serial.println(2); select_file = 2; display_partialLine_BJZ(6, select2,150, 1);  }
+        if(key5_flag>=3) key5_flag = 0; 
+      }
+      }while(digitalRead(key0) == 1);    //在选择file下，按下key0退出
+      flag = 0;
+      Serial.println("退出select"); 
+     } }
+    page_flag = 4;
+    if(digitalRead(key0) == 0)   //返回界面1
+    { 
+      do{
+      page_flag = 1;get_wifi_flag = 1;  //1.是放它放回界面1，2.是让他重新连一次wifi
+      wifi_flag = 1;to_one_flag = 1;  // 1.是为了连接成功用。2.重界面2 返回界面1 ，就让他清一下屏幕的标志  （放置重复刷新屏幕）    
+      Serial.println("在key0的循环里");
+      break;
+      }while(digitalRead(key5) == 1); 
+    }
+    Serial.println(page_flag);
+    }while(digitalRead(key5) == 1 );   //按下则进入界面3 
+  }
+   if(page_flag == 4  )        //进入页面3
+  { char flag=0;
+    sdBeginCheck();   //SD卡挂载检查
+    if(select_file == 2) {  file_name = "word.txt"; }
+    if(select_file == 1) {  file_name = "xs.txt"; }
+     read_file_data(); //读取SD卡文件内容，保存到SD_data中
+    do{
+    Serial.println("界面4");
+    if(digitalRead(key5) == 0)
+      {
+      BWClearScreen();   //黑一下刷新屏幕
+        if( select_file == 1)
+       show_type1(now_read1);  //传当前阅读位置给它   三体
+        if(select_file == 2 )
+       show_type2(now_read2);     //单词
+      }
+    }while(digitalRead(key0) == 1);
+    delay(1000);  //防止直接退出下一个do while
+  do
+  {
+    Serial.println("选择界面1 or 界面2");
+    Serial.println("按下key5则直接返回界面3");
+    Serial.println("按下key0则返回界面1");
+    page_flag = 3; get_wifi_flag =0;
+    if(digitalRead(key0) == 0) 
+    do
+    {
+      Serial.println("返回第一界面中");
+      page_flag = 1;get_wifi_flag ==1; flag=1; break;
+    }while(1);
+    if(flag==1) { flag=0;break; }
+  } while (digitalRead(key5) == 1); //按下key5退出这个
+  BWClearScreen();
+  }
+  Serial.println("在loop里"); Serial.println(page_flag);  Serial.println();
   
-//   if( get_wifi_flag ==1 )   //目的是为了重界面2返回界面1 ，重新连接一次wifi
-//     { get_wifi_flag ==0 ;  //清0 放置 重复去连wifi
-//       BWClearScreen();   //黑一下刷新屏幕
-//       display_partialLine(0,".");display_partialLine(1,"wifi连接中...");     
-//       display_partialLine(2,".");display_partialLine(3,"请等待5s");     
-//       display_partialLine(4,".");display_partialLine(5,".");display_partialLine(6,".");
-//       get_wifi();  
-//     }
-// }
-//     //BWClearScreen();   //黑一下刷新屏幕  display_partialLine_BJZ(uint8_t line, String zf,uint16_t x, uint8_t width); //不居中
+  if( get_wifi_flag ==1 )   //目的是为了重界面2返回界面1 ，重新连接一次wifi
+    { get_wifi_flag ==0 ;  //清0 放置 重复去连wifi
+      BWClearScreen();   //黑一下刷新屏幕
+      display_partialLine(0,".");display_partialLine(1,"wifi连接中...");     
+      display_partialLine(2,".");display_partialLine(3,"请等待5s");     
+      display_partialLine(4,".");display_partialLine(5,".");display_partialLine(6,".");
+      get_wifi();  
+    }
+}
+    //BWClearScreen();   //黑一下刷新屏幕  display_partialLine_BJZ(uint8_t line, String zf,uint16_t x, uint8_t width); //不居中
 
-
+#endif
    
 
 
-// void key0_select()
-// { key0_flag ++;
-//   if(key0_flag == 0 ){
-//     display_partialLine_BJZ(6,"←",230, 1);
-//     display_partialLine_BJZ(0," ",230, 1);
-//     }
-//   else {
-//     if(key0_flag >=7 ) {key0_flag == 0; }
-//     display_partialLine_BJZ(key0_flag-1," ",230, 1);
-//     display_partialLine_BJZ(key0_flag,"←",230, 1);    
-//   }
-// }
+void key0_select()
+{ key0_flag ++;
+  if(key0_flag == 0 ){
+    display_partialLine_BJZ(6,"←",230, 1);
+    display_partialLine_BJZ(0," ",230, 1);
+    }
+  else {
+    if(key0_flag >=7 ) {key0_flag == 0; }
+    display_partialLine_BJZ(key0_flag-1," ",230, 1);
+    display_partialLine_BJZ(key0_flag,"←",230, 1);    
+  }
+}
 
-// void get_time_weather()  { 
-//   if( wifi_flag == 1 ) {
-//   GetData();
-//   display_main();
-//       RTC_tqmskjxs = 0;         // 写0表示下次不需要开机显示
-//     ESP.rtcUserMemoryWrite(RTCdz_tqmskjxs, &RTC_tqmskjxs, sizeof(RTC_tqmskjxs));//天气模式开机显示
-//     // esp_sleep(3600000);       // 休眠1个钟
-//   }  //获得天气,在里面调用处理天气的函数，处理完后显示
-// }
-
-
+void get_time_weather()  { 
+  if( wifi_flag == 1 ) {
+  GetData();
+  display_main();
+      RTC_tqmskjxs = 0;         // 写0表示下次不需要开机显示
+    ESP.rtcUserMemoryWrite(RTCdz_tqmskjxs, &RTC_tqmskjxs, sizeof(RTC_tqmskjxs));//天气模式开机显示
+    // esp_sleep(3600000);       // 休眠1个钟
+  }  //获得天气,在里面调用处理天气的函数，处理完后显示
+}
 
 
-// /**
-//  * @brief       屏幕模式选择
-//  * @param[in]   dat: 要写入的数据
-//  * @retval      void
-//  * @attention
-//  */
-// screen_status_e Screen_Mode_Changed(void)
-// {
-//    if(digitalRead(key5) == 1)   // 检测到按键5按下，进行模式变换
-//    {
-//       switch (screen_mode_current_state)
-//       {
-//       case /* constant-expression */:
-//         /* code */
-//         break;
-      
-//       default:
-//         break;
-//       }
 
-//    }
-
-
-// }
 
 
 void GetData()
@@ -608,45 +659,45 @@ void display_tbpd() //天气图标显示
   uint16_t y = 5;
   String code;
   code = actual.weather_code;
-  // if (code == "0")      display.drawInvertedBitmap(x, y + 5, Bitmap_qt, 45, 45, heise);
-  // else if (code == "1") display.drawInvertedBitmap(x, y, Bitmap_qt_ws, 45, 45, heise);
-  // else if (code == "2") display.drawInvertedBitmap(x, y + 5, Bitmap_qt, 45, 45, heise);
-  // else if (code == "3") display.drawInvertedBitmap(x, y, Bitmap_qt_ws, 45, 45, heise);
-  // else if (code == "4") display.drawInvertedBitmap(x, y, Bitmap_dy, 45, 45, heise);
-  // else if (code == "5") display.drawInvertedBitmap(x, y, Bitmap_dy, 45, 45, heise);
-  // else if (code == "6") display.drawInvertedBitmap(x, y, Bitmap_dy_ws, 45, 45, heise);
-  // else if (code == "7") display.drawInvertedBitmap(x, y, Bitmap_dy, 45, 45, heise);
-  // else if (code == "8") display.drawInvertedBitmap(x, y, Bitmap_dy_ws, 45, 45, heise);
-  // else if (code == "9") display.drawInvertedBitmap(x, y + 3, Bitmap_yt, 45, 45, heise);
-  // else if (code == "10") display.drawInvertedBitmap(x, y, Bitmap_zheny, 45, 45, heise);
-  // else if (code == "11") display.drawInvertedBitmap(x, y, Bitmap_lzy, 45, 45, heise);
-  // else if (code == "12") display.drawInvertedBitmap(x, y, Bitmap_lzybbb, 45, 45, heise);
-  // else if (code == "13") display.drawInvertedBitmap(x, y, Bitmap_xy, 45, 45, heise);
-  // else if (code == "14") display.drawInvertedBitmap(x, y, Bitmap_zhongy, 45, 45, heise);
-  // else if (code == "15") display.drawInvertedBitmap(x, y, Bitmap_dayu, 45, 45, heise);
-  // else if (code == "16") display.drawInvertedBitmap(x, y, Bitmap_by, 45, 45, heise);
-  // else if (code == "17") display.drawInvertedBitmap(x, y, Bitmap_dby, 45, 45, heise);
-  // else if (code == "18") display.drawInvertedBitmap(x, y, Bitmap_tdby, 45, 45, heise);
-  // else if (code == "19") display.drawInvertedBitmap(x, y, Bitmap_dongy, 45, 45, heise);
-  // else if (code == "20") display.drawInvertedBitmap(x, y, Bitmap_yjx, 45, 45, heise);
-  // else if (code == "21") display.drawInvertedBitmap(x, y, Bitmap_zhenx, 45, 45, heise);
-  // else if (code == "22") display.drawInvertedBitmap(x, y, Bitmap_xx, 45, 45, heise);
-  // else if (code == "23") display.drawInvertedBitmap(x, y, Bitmap_zhongy, 45, 45, heise);
-  // else if (code == "24") display.drawInvertedBitmap(x, y, Bitmap_dx, 45, 45, heise);
-  // else if (code == "25") display.drawInvertedBitmap(x, y, Bitmap_bx, 45, 45, heise);
-  // else if (code == "26") display.drawInvertedBitmap(x, y, Bitmap_fc, 45, 45, heise);
-  // else if (code == "27") display.drawInvertedBitmap(x, y, Bitmap_ys, 45, 45, heise);
-  // else if (code == "28") display.drawInvertedBitmap(x, y, Bitmap_scb, 45, 45, heise);
-  // else if (code == "29") display.drawInvertedBitmap(x, y, Bitmap_scb, 45, 45, heise);
-  // else if (code == "30") display.drawInvertedBitmap(x, y + 5, Bitmap_w, 45, 45, heise);
-  // else if (code == "31") display.drawInvertedBitmap(x, y, Bitmap_m, 45, 45, heise);
-  // else if (code == "32") display.drawInvertedBitmap(x, y, Bitmap_f, 45, 45, heise);
-  // else if (code == "33") display.drawInvertedBitmap(x, y, Bitmap_f, 45, 45, heise);
-  // else if (code == "34") display.drawInvertedBitmap(x, y, Bitmap_jf, 45, 45, heise);
-  // else if (code == "35") display.drawInvertedBitmap(x, y, Bitmap_rdfb, 45, 45, heise);
-  // //else if (code == 37) display.drawInvertedBitmap(x,y, Bitmap_dy, 45, 45, heise);
-  // //else if (code == 38) display.drawInvertedBitmap(x,y, Bitmap_dy, 45, 45, heise);
-  // else if (code == "99") display.drawInvertedBitmap(x, y, Bitmap_wz, 45, 45, heise);
+  if (code == "0")      display.drawInvertedBitmap(x, y + 5, Bitmap_qt, 45, 45, heise);
+  else if (code == "1") display.drawInvertedBitmap(x, y, Bitmap_qt_ws, 45, 45, heise);
+  else if (code == "2") display.drawInvertedBitmap(x, y + 5, Bitmap_qt, 45, 45, heise);
+  else if (code == "3") display.drawInvertedBitmap(x, y, Bitmap_qt_ws, 45, 45, heise);
+  else if (code == "4") display.drawInvertedBitmap(x, y, Bitmap_dy, 45, 45, heise);
+  else if (code == "5") display.drawInvertedBitmap(x, y, Bitmap_dy, 45, 45, heise);
+  else if (code == "6") display.drawInvertedBitmap(x, y, Bitmap_dy_ws, 45, 45, heise);
+  else if (code == "7") display.drawInvertedBitmap(x, y, Bitmap_dy, 45, 45, heise);
+  else if (code == "8") display.drawInvertedBitmap(x, y, Bitmap_dy_ws, 45, 45, heise);
+  else if (code == "9") display.drawInvertedBitmap(x, y + 3, Bitmap_yt, 45, 45, heise);
+  else if (code == "10") display.drawInvertedBitmap(x, y, Bitmap_zheny, 45, 45, heise);
+  else if (code == "11") display.drawInvertedBitmap(x, y, Bitmap_lzy, 45, 45, heise);
+  else if (code == "12") display.drawInvertedBitmap(x, y, Bitmap_lzybbb, 45, 45, heise);
+  else if (code == "13") display.drawInvertedBitmap(x, y, Bitmap_xy, 45, 45, heise);
+  else if (code == "14") display.drawInvertedBitmap(x, y, Bitmap_zhongy, 45, 45, heise);
+  else if (code == "15") display.drawInvertedBitmap(x, y, Bitmap_dayu, 45, 45, heise);
+  else if (code == "16") display.drawInvertedBitmap(x, y, Bitmap_by, 45, 45, heise);
+  else if (code == "17") display.drawInvertedBitmap(x, y, Bitmap_dby, 45, 45, heise);
+  else if (code == "18") display.drawInvertedBitmap(x, y, Bitmap_tdby, 45, 45, heise);
+  else if (code == "19") display.drawInvertedBitmap(x, y, Bitmap_dongy, 45, 45, heise);
+  else if (code == "20") display.drawInvertedBitmap(x, y, Bitmap_yjx, 45, 45, heise);
+  else if (code == "21") display.drawInvertedBitmap(x, y, Bitmap_zhenx, 45, 45, heise);
+  else if (code == "22") display.drawInvertedBitmap(x, y, Bitmap_xx, 45, 45, heise);
+  else if (code == "23") display.drawInvertedBitmap(x, y, Bitmap_zhongy, 45, 45, heise);
+  else if (code == "24") display.drawInvertedBitmap(x, y, Bitmap_dx, 45, 45, heise);
+  else if (code == "25") display.drawInvertedBitmap(x, y, Bitmap_bx, 45, 45, heise);
+  else if (code == "26") display.drawInvertedBitmap(x, y, Bitmap_fc, 45, 45, heise);
+  else if (code == "27") display.drawInvertedBitmap(x, y, Bitmap_ys, 45, 45, heise);
+  else if (code == "28") display.drawInvertedBitmap(x, y, Bitmap_scb, 45, 45, heise);
+  else if (code == "29") display.drawInvertedBitmap(x, y, Bitmap_scb, 45, 45, heise);
+  else if (code == "30") display.drawInvertedBitmap(x, y + 5, Bitmap_w, 45, 45, heise);
+  else if (code == "31") display.drawInvertedBitmap(x, y, Bitmap_m, 45, 45, heise);
+  else if (code == "32") display.drawInvertedBitmap(x, y, Bitmap_f, 45, 45, heise);
+  else if (code == "33") display.drawInvertedBitmap(x, y, Bitmap_f, 45, 45, heise);
+  else if (code == "34") display.drawInvertedBitmap(x, y, Bitmap_jf, 45, 45, heise);
+  else if (code == "35") display.drawInvertedBitmap(x, y, Bitmap_rdfb, 45, 45, heise);
+  //else if (code == 37) display.drawInvertedBitmap(x,y, Bitmap_dy, 45, 45, heise);
+  //else if (code == 38) display.drawInvertedBitmap(x,y, Bitmap_dy, 45, 45, heise);
+  else if (code == "99") display.drawInvertedBitmap(x, y, Bitmap_wz, 45, 45, heise);
 }
 
 void swap(int *t1, int *t2)
@@ -857,10 +908,10 @@ void display_main()
   do
   {  //****** 显示实况温度和天气图标 ******
     //提取最后更新时间的 仅提取 小时:分钟
-         u8g2Fonts.setCursor(210, 16); //实时时间-小时
-      u8g2Fonts.print(RTC_hour);
-      u8g2Fonts.setCursor(230, 16); //实时时间-小时
-      u8g2Fonts.print(RTC_minute);
+      //    u8g2Fonts.setCursor(210, 16); //实时时间-小时
+      // u8g2Fonts.print(RTC_hour);
+      // u8g2Fonts.setCursor(230, 16); //实时时间-小时
+      // u8g2Fonts.print(RTC_minute);
     String minutes_hours;
     for (uint8_t i = 11; i < 16; i++) minutes_hours += actual.last_update[i];
 
@@ -892,14 +943,14 @@ void display_main()
     //****** 显示小图标和详情信息 ******
     u8g2Fonts.setFont(chinese_gb2312);
     //最后更新时间
-    // display.drawInvertedBitmap(main_x0, main_y0 - 12, Bitmap_gengxing, 13, 13, heise); //画最后更新时间小图标 图片
-    // u8g2Fonts.setCursor(main_x1, main_y0);
-    // u8g2Fonts.print(minutes_hours);
-    // display.drawInvertedBitmap(main_x0, main_y1 - 12, Bitmap_weizhi, 13, 13, heise); //画位置小图标  图片
+              display.drawInvertedBitmap(main_x0, main_y0 - 12, Bitmap_gengxing, 13, 13, heise); //画最后更新时间小图标 图片（注释）
+              u8g2Fonts.setCursor(main_x1, main_y0);
+              u8g2Fonts.print(minutes_hours);
+              display.drawInvertedBitmap(main_x0, main_y1 - 12, Bitmap_weizhi, 13, 13, heise); //画位置小图标  图片（注释）
     u8g2Fonts.setCursor(main_x1, main_y1);
     u8g2Fonts.print(actual.city);
     //天气实况状态
-    // display.drawInvertedBitmap(main_x0, main_y2 - 12, Bitmap_zhuangtai, 13, 13, heise); //画天气状态小图标  图片
+              display.drawInvertedBitmap(main_x0, main_y2 - 12, Bitmap_zhuangtai, 11, 11, heise); //画天气状态小图标  图片（注释）
     u8g2Fonts.setCursor(main_x1, main_y2);
     u8g2Fonts.print(actual.weather_name);
     //紫外线指数
@@ -1182,10 +1233,10 @@ void display_main()
 
   }while(display.nextPage());
     //display.nextPage()
- while(digitalRead(key5)==1)
- {
-   delay(1000);
- }
+//  while(digitalRead(key5)==1)
+//  {
+//    delay(1000);
+//  }
       
   // while (display.nextPage());
 }
@@ -1581,6 +1632,7 @@ void peiwang_mod()
     // }
   }
 }
+
 void init_ping()      //屏幕初始化
 {
   //display.init();
@@ -1594,142 +1646,76 @@ void init_ping()      //屏幕初始化
   u8g2Fonts.setBackgroundColor(baise);  // 设置背景色
   u8g2Fonts.setFont(chinese_gb2312);    // 设置字体
 }
+// 设置页面ui处理
+void select_page_ui_process(uint8_t y)
+{
 
-// void init_setup()     //原程序的 setup
-// {
-//   WiFi.mode(WIFI_OFF); // 关闭wifi
-//   Serial.begin(74880);
-//   ESP.wdtEnable(5000);     //使能软件看门狗的触发间隔
-//   //Serial.print("上次重启原因："); Serial.println(ESP.getResetReason());
-//   init_ping();  //屏幕初始化
-//   display_partialLine(0, "因SD卡挂载超时导致软看门狗重启");
-//   if (ESP.getResetReason() == "Software Watchdog")
-//   {
-//     ESP.rtcUserMemoryRead(RTCdz_SDInitError, &RTC_SDInitError, sizeof(RTC_SDInitError));
-//     if (RTC_SDInitError == 1)
-//     {
-//       Serial.println("因SD卡挂载超时导致软看门狗重启");
-//       Serial.println("请检查SD卡或电路");
-//       Serial.println("已进入休眠状态");
-//       display_partialLine(0, "aaaa");
-//       display_partialLine(1, "bbbb");
-//       display_partialLine(2, "cccc");
-//       esp_sleep(0);
-//     }
-//   }
-// }
+	if(ui_loging_flag == 0)		// 允许ui加载
+	{
 
-// void init_loop()    //原程序的 loop
-// {
-//   pinMode(key5, INPUT_PULLUP);
-//   Serial.println("等待按下按键3");
-//   display_partialLine(0, "");
-//   display_partialLine(7, "电池电压" + String(getBatVolNew()) + "V");
-//   boolean sw = 0;
-//   while (sw == 0)
-//   {
-//     ESP.wdtFeed();//喂狗
-//     if (digitalRead(key5) == 0)
-//     {
-//       sw = 1;
-//       sdBeginCheck();
-//       if (sdInitOk)
-//       {
-//         root = SD.open("/");
-//         printDirectory(root, 0); //打印目录
-//         Serial.println("文件列表输出完毕");
-//         Serial.println(" ");
-//         root = SD.open("/");
-//         File myFile = SD.open("test.txt",FILE_WRITE); // 打开test.txt文件
-//         if (myFile)  
-//         {
-//           Serial.print("Writing to test.txt...");
-//           myFile.println("aaa");   //往SD写
-//           Serial.println("test.txt:");
-//           myFile.close();
-//         }
-//         else Serial.println("打开失败 测试.txt");
-//         Serial.println(" "); Serial.println(" ");
-//       }
-//       File myFile = SD.open("test.txt");
-//       if (myFile) {
-//         Serial.println("test.txt:");
-//         // read from the file until there's nothing else in it:
-//         while (myFile.available()) {
-//           Serial.write(myFile.read());
-//         }
-//         // close the file:
-//         myFile.close();
-//       } else {
-//         // if the file didn't open, print an error:
-//         Serial.println("error opening test.txt");
-//       }
-//     }
-//   }
-//   //BWClearScreen();//黑白清屏
-//   display_partialLine(1, "按下按键3输出文件列表");
-//   pinMode(key5, INPUT_PULLUP);
-//   sw = 0;
-//   while (sw == 0)
-//   {
-//     ESP.wdtFeed();//喂狗
-//    if (digitalRead(key5) == 0)
-//     {
-//       sw = 1;
-//       sdBeginCheck();
-//       display_partialLine(1, "文件列表");
-//       uint8_t count = 2;
-//       root = SD.open("/");
-//       while (1) //输出列表
-//       {
-//         ESP.wdtFeed();//喂狗
-//         File entry = root.openNextFile();
-//         // Serial.print("entry:"); Serial.println(entry);
-//         if (! entry) break;
-//         String fileName = entry.name(); //文件名
-//         size_t fileSize = entry.size(); //文件大小
-//         Serial.print(fileName); Serial.print(" "); Serial.println(fileSize);
-//         String xiaoxi = String(count - 1) + ". " + fileName + "  " + String(fileSize) + "字节";
-//         display_partialLine(count, xiaoxi);
-//         count++;
-//         entry.close();
-//       }
-//     }
-//   }
-//   display_partialLine(7, "2电池电压:" + String(getBatVolNew()) + "V");
-//   esp_sleep(0);
-// }
+	// 	display_partialLine(4,"阅读");
+	    BWClearScreen();   //黑一下刷新屏幕
+      BWClearScreen();   //黑一下刷新屏幕
 
-// void printDirectory(File dir, int numTabs)    //打印目录
-// {
-//   while (true)
-//   {
-//     File entry =  dir.openNextFile();
-//     if (! entry) {
-//       // no more files
-//       break;
-//     }
-//     for (uint8_t i = 0; i < numTabs; i++) {
-//       Serial.print('\t');
-//     }
-//     Serial.print(entry.name());
-//     if (entry.isDirectory())
-//     {
-//       Serial.println("/");
-//       printDirectory(entry, numTabs + 1);
-//     }
-//     else
-//     {
-//       // files have sizes, directories do not
-//       Serial.print("\t\t");
-//       Serial.print(entry.size(), DEC);
-//       time_t cr = entry.getCreationTime();
-//       time_t lw = entry.getLastWrite();
-//       struct tm * tmstruct = localtime(&cr);
-//       Serial.printf("\tCREATION: %d-%02d-%02d %02d:%02d:%02d", (tmstruct->tm_year) + 1900, (tmstruct->tm_mon) + 1, tmstruct->tm_mday, tmstruct->tm_hour, tmstruct->tm_min, tmstruct->tm_sec);
-//       tmstruct = localtime(&lw);
-//       Serial.printf("\tLAST WRITE: %d-%02d-%02d %02d:%02d:%02d\n", (tmstruct->tm_year) + 1900, (tmstruct->tm_mon) + 1, tmstruct->tm_mday, tmstruct->tm_hour, tmstruct->tm_min, tmstruct->tm_sec);
-//     }
-//     entry.close();
-//   }
-// }
+      display_partialLine(1,"时钟");     
+
+      display_partialLine(5,"游戏");
+      display_partialLine_BJZ(4,"→",20,4);
+      
+      ui_loging_flag = 1;
+	}
+}
+
+
+void display_main_home()
+{
+   //u8g2Fonts.setFontMode(1);
+    display.setFullWindow(); //设置全屏刷新 height
+    display.firstPage();
+
+    GetData();      // 获取数据
+
+    //display.fillScreen(heise);  // 填充屏幕
+    //display.display(1);         // 显示缓冲内容到屏幕，用于全屏缓冲
+    //display.fillScreen(baise);  // 填充屏幕
+    //display.display(1);         // 显示缓冲内容到屏幕，用于全屏缓冲
+
+  do
+  {  
+
+    
+    //****** 显示实况温度和天气图标 ******
+      String hour, minute;
+
+      if (RTC_hour < 10)   hour = "0" + String(RTC_hour);
+      else                 hour = String(RTC_hour);
+      if (RTC_minute < 10) minute = "0" + String(RTC_minute);
+      else                 minute = String(RTC_minute);
+
+    //提取最后更新时间的 仅提取 小时:分钟
+      u8g2Fonts.setCursor(200, 16); //实时时间-小时
+      u8g2Fonts.print(hour);
+      u8g2Fonts.setCursor(230, 16); //实时时间-小时
+      u8g2Fonts.print(minute);
+      u8g2Fonts.setCursor(220, 16); //实时时间-小时
+      u8g2Fonts.print(":");
+
+   // display_tbpd();
+    //****** 显示小图标和详情信息 ******
+    display.drawInvertedBitmap(80, 12, Bitmap_ACE,42, 85, heise);
+    display.drawInvertedBitmap(122, 12 , Bitmap_ACErig,41, 85, heise);
+    display.drawLine(0, 12, 295, 12, baise); //画水平线
+    //display.drawLine(163, 0, 163, 100, baise);
+    display.drawLine(0, 100, 250, 100, heise);
+    u8g2Fonts.setFont(chinese_gb2312);
+    u8g2Fonts.setCursor(50, 120);  //显示实况温度
+    u8g2Fonts.print("单击左键以进入菜单...");
+
+    display.drawInvertedBitmap(10,5,Bitmap_bat3,21,12,heise);
+
+  }while(display.nextPage());
+
+      
+  // while (display.nextPage());
+}
+
