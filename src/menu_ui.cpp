@@ -1,7 +1,7 @@
 /**
   ****************************** Y.Z.T.****************************************
   * @file       menu_ui.c/h
-  * @brief      Ìá¹©²Ëµ¥¿ò¼ÜÖĞUIµÄ´¦Àí
+  * @brief      æä¾›èœå•æ¡†æ¶ä¸­UIçš„å¤„ç†
   * @note
   * @history    2022.7.8
   *
@@ -18,7 +18,7 @@
 #include "Display_setup.h"
 
 
-//Ö÷²Ëµ¥³õÊ¼»¯
+//ä¸»èœå•åˆå§‹åŒ–
 void Menu_Main_Init(void)
 {
 	Serial.println("home status");
@@ -28,84 +28,84 @@ void Menu_Main_Init(void)
 	sub_index.select_current_index = 1;
 	sub_index.Current_Page = MAIN_PAGE;
 
-  display.fillScreen(baise);  // Ìî³äÆÁÄ»
+  display.fillScreen(baise);  // å¡«å……å±å¹•
 	display.drawInvertedBitmap(50, 3, Bitmap_m, 45, 45, heise);
-   BW_refresh();          //ºÚ°×Ë¢ĞÂÒ»´Î
+   BW_refresh();          //é»‘ç™½åˆ·æ–°ä¸€æ¬¡
 
 
 
-	//.....Ë¢ĞÂ»ØÖ÷Ò³ÃæµÄUIºÍ×´Ì¬(µÈ´ıÌí¼Ó³õÊ¼»¯²Ëµ¥)
+	//.....åˆ·æ–°å›ä¸»é¡µé¢çš„UIå’ŒçŠ¶æ€(ç­‰å¾…æ·»åŠ åˆå§‹åŒ–èœå•)
 }
 
-//½øÈëÏàÓ¦µÄÒ³Ãæ
+//è¿›å…¥ç›¸åº”çš„é¡µé¢
 void Enter_Page(menu_i32 index, button_status_e Key5Value , button_status_e Key0Value)
 {
 	
 	sub_index.Current_Page = index;
 	switch (sub_index.Current_Page)
 	{
-		//½øÈëÖ÷Ò³Ãæ
+		//è¿›å…¥ä¸»é¡µé¢
 	case MAIN_PAGE:
 	{
 		Menu_Select_Item(MAIN_PAGE, Key5Value,Key0Value);
 		break;
 	}
-		// ½øÈëÊ±ÖÓÒ³Ãæ
+		// è¿›å…¥æ—¶é’Ÿé¡µé¢
 	case CLOCK_PAGE:
 	{
 		Menu_Select_Item(CLOCK_PAGE,  Key5Value,Key0Value);
 		break;
 	}
-		// 	½øÈëÌìÆø½çÃæ
+		// 	è¿›å…¥å¤©æ°”ç•Œé¢
 	case WEATHER_PAGE:
 	{
 		Menu_Select_Item(WEATHER_PAGE,  Key5Value,Key0Value);
 		break;
 	}
-	//½øÈëÅäÖÃÒ³Ãæ
+	//è¿›å…¥é…ç½®é¡µé¢
 	case CONFIGURATION_PAGE:
 	{
 		Menu_Select_Item(CONFIGURATION_PAGE,  Key5Value,Key0Value);
 		break;
 	}
-	//½øÈëÔÄ¶ÁÒ³Ãæ
+	//è¿›å…¥é˜…è¯»é¡µé¢
 	case READ_PAGE:
 	{
 		Menu_Select_Item(READ_PAGE,  Key5Value,Key0Value);
 		break;
 	}
-	//½øÈëÓÎÏ·Ò³Ãæ
+	//è¿›å…¥æ¸¸æˆé¡µé¢
 	case GAME_PAGE:
 	{
 		Menu_Select_Item(GAME_PAGE,  Key5Value,Key0Value);
 		break;
 	}
-	//½øÈëÉèÖÃÒ³Ãæ
+	//è¿›å…¥è®¾ç½®é¡µé¢
 	case SETTING_PAGE:
 	{
 		Menu_Select_Item(SETTING_PAGE,  Key5Value,Key0Value);
 		break;
 	}
-	//½øÈëÉèÖÃÒ³Ãæ
+	//è¿›å…¥è®¾ç½®é¡µé¢
 	case SELECT_PAGE:
 	{
 		Menu_Select_Item(SELECT_PAGE,  Key5Value,Key0Value);
 		break;
 	}
-	// ½øÈë²Ëµ¥Ò³Ãæ
+	// è¿›å…¥èœå•é¡µé¢
 	case LANGUAGE_PAGE:
 	{
 		Menu_Select_Item(LANGUAGE_PAGE,  Key5Value, Key0Value);
 		break;
 	}
-	// ½øÈë²Ëµ¥Ò³Ãæ
+	// è¿›å…¥èœå•é¡µé¢
 	case WORD_PAGE:
 	{
 		Menu_Select_Item(WORD_PAGE,  Key5Value, Key0Value);
 		break;
 	}
 
-	// ·ñÔò·µ»ØÖ÷Ò³Ãæ
+	// å¦åˆ™è¿”å›ä¸»é¡µé¢
 	default:
 	{	Menu_Select_Item(MAIN_PAGE, Key5Value,Key0Value);
 		break;
@@ -113,32 +113,67 @@ void Enter_Page(menu_i32 index, button_status_e Key5Value , button_status_e Key0
 	}
 }
 
-//Ö÷Ò³ÃæUI´¦Àí
+//ä¸»é¡µé¢UIå¤„ç†
 void main_page_ui_process(menu_u8 index)
 {
-	if(ui_loging_flag == 0)		// ÔÊĞíui¼ÓÔØ
+	if(ui_loging_flag == 0)		// å…è®¸uiåŠ è½½
 	{
-		BW_refresh();          //ºÚ°×Ë¢ĞÂÒ»´Î
-		BW_refresh();          //ºÚ°×Ë¢ĞÂÒ»´Î
-
-		display_main_home();
+		//BW_refresh();          //é»‘ç™½åˆ·æ–°ä¸€æ¬¡
+		BW_refresh();          //é»‘ç™½åˆ·æ–°ä¸€æ¬¡
+		
+		GetData();
+		display_main_home("å•å‡»ä»¥è¿›å…¥èœå•...");
 
 		ui_loging_flag = 1;
+	}
+
+	if(RTC_get_data_count > 0xFFFFF)		// æ›´æ–°æ•°æ®
+	{
+		RTC_get_data_count = 0;
+		GetData();
 	}
 }
 
 
-//ÌìÆøÒ³ÃæUI´¦Àí
+//å¤©æ°”é¡µé¢UIå¤„ç†
 void weather_page_ui_process(void)
 {
-	if(ui_loging_flag == 0)
+	if(ui_loging_flag == 0)			// æ”¾é‡Œé¢åªè·å–ä¸€æ¬¡ ï¼Œä¸ä¼šåŠ¨æ€æ›´æ–°
 	{
-		BW_refresh();          //ºÚ°×Ë¢ĞÂÒ»´Î
+		GetData();
+		//BW_refresh();          //é»‘ç™½åˆ·æ–°ä¸€æ¬¡
 		BW_refresh();
-		get_time_weather();  //Èç¹ûwifi_flag Îª1£¬Ôò¿ÉÒÔË¢ĞÂÊ±¼äºÍÌìÆø
+		get_time_weather();  //å¦‚æœwifi_flag ä¸º1ï¼Œåˆ™å¯ä»¥åˆ·æ–°æ—¶é—´å’Œå¤©æ°”
 
 		ui_loging_flag = 1;
 	}
+
+	// if(RTC_get_data_count > 0xFFFF)		// æ›´æ–°æ•°æ®
+	// {
+	// 	RTC_get_data_count = 0;
+	// 	GetData();
+	// }
 }
 
+//å¤©æ°”é¡µé¢UIå¤„ç†
+void clock_page_ui_process(void)
+{
+
+	if(ui_loging_flag == 0)
+	{
+	//  BW_refresh();          //é»‘ç™½åˆ·æ–°ä¸€æ¬¡
+		GetData();
+	  BW_refresh();
+      display_clock();        // æ—¶é’Ÿæ˜¾ç¤ºç•Œé¢
+	  ui_loging_flag = 1;
+
+	}
+
+	if(RTC_get_data_count > 0xFFFFF)		// æ›´æ–°æ•°æ®
+	{
+		RTC_get_data_count = 0;
+		GetData();
+		display_clock();        // æ—¶é’Ÿæ˜¾ç¤ºç•Œé¢
+	}
+}
 

@@ -267,6 +267,17 @@ const unsigned char Bitmap_bilbil[] PROGMEM = { 0xff, 0xff, 0xff, 0xff, 0xff, 0x
 //wifi断开 width: 26, height: 22
 const unsigned char Bitmap_wifidk[] PROGMEM = { 0xdf, 0xff, 0xff, 0xc0, 0x8f, 0xff, 0xff, 0xc0, 0xc7, 0xff, 0xff, 0xc0, 0xe3, 0xe1, 0xff, 0xc0, 0xf1, 0xe0, 0x1f, 0xc0, 0xf0, 0xf0, 0x03, 0xc0, 0xe0, 0x78, 0x01, 0xc0, 0x80, 0x3f, 0xc0, 0x40, 0x03, 0x1f, 0xf0, 0x00, 0x0f, 0x8f, 0xfc, 0x00, 0xdf, 0xc7, 0x7e, 0xc0, 0xff, 0x03, 0x9f, 0xc0, 0xfc, 0x01, 0xcf, 0xc0, 0xf8, 0x00, 0xe7, 0xc0, 0xf8, 0x7c, 0x77, 0xc0, 0xfc, 0xfe, 0x3b, 0xc0, 0xff, 0xff, 0x1f, 0xc0, 0xff, 0xe1, 0x8f, 0xc0, 0xff, 0x80, 0x47, 0xc0, 0xff, 0xc0, 0xe3, 0xc0, 0xff, 0xe1, 0xf1, 0xc0, 0xff, 0xf3, 0xfb, 0xc0 };
 
+// wifi图标(左) width: 11, height: 22
+const unsigned char Bitmap_wifilink[] PROGMEM = {0X00,0X01,0X0B,0X00,0X16,0X00,
+0XFF,0XE0,0XFF,0XE0,0XFF,0XE0,0XFE,0X00,0XF0,0X00,0XC1,0XE0,0X87,0XE0,0X9F,0XE0,
+0XFE,0X00,0XF8,0X00,0XF1,0XE0,0XFB,0XE0,0XFF,0X80,0XFE,0X00,0XFF,0X20,0XFF,0XE0,
+0XFF,0XE0,0XFF,0XC0,0XFF,0XC0,0XFF,0XE0,0XFF,0XE0,0XFF,0XE0,};
+
+// wifi图标(右) width: 11, height: 22
+const unsigned char Bitmap_wifilink_rig[] PROGMEM = {0X00,0X01,0X0B,0X00,0X16,0X00,
+0XFF,0XE0,0XFF,0XE0,0XFF,0XE0,0X0F,0XE0,0X01,0XE0,0XF0,0X60,0XFC,0X20,0XFF,0X20,
+0X0F,0XE0,0X03,0XE0,0XF1,0XE0,0XFB,0XE0,0X3F,0XE0,0X0F,0XE0,0X9F,0XE0,0XFF,0XE0,
+0XFF,0XE0,0X7F,0XE0,0X7F,0XE0,0XFF,0XE0,0XFF,0XE0,0XFF,0XE0,};
 
 // ACE图标 width: 42, height: 85
 const unsigned char Bitmap_ACE[]  PROGMEM = {0X00,0X01,0X2A,0X00,0X55,0X00,
@@ -342,6 +353,7 @@ const unsigned char Bitmap_ACErig[]  PROGMEM = {0X00,0X01,0X29,0X00,0X55,0X00,
 extern const String language;  // 请求语言
 extern char *ssid     ;          //网络
 extern char *password ;
+extern uint32_t RTC_get_data_count;  // 数据获取计数，隔一段时间才获取新数据
 
 extern Epd epd;
 extern uint32_t RTC_SDInitError;    // SD挂载错误 0-无 1-错误
@@ -467,7 +479,11 @@ extern boolean peiwangInitStete ; // 配网初始化 0-未初始化 1-已初始�
  String byteConversion(size_t zijie); //字节换算
  void get_time_weather();     //读取时间和天气 并且显示
  void select_page_ui_process(uint8_t y);
-void display_main_home();
+void display_main_home(String detail);
+void GetData();
+void display_pninter(uint8_t subindex);
+void display_clock(); //时钟显示界面
+
 
 
 # endif

@@ -822,11 +822,8 @@ void display_clock() //时钟显示界面
       else                 minute = String(RTC_minute);
       assembleTime = hour + ":" + minute;
 
-      int8_t sz_x = 0; //显示位置X轴的偏移量
-      if (RTC_hour >= 10 && RTC_hour <= 19) sz_x = -3; //10-19点
-      else sz_x = 2;
       //显示时间
-      u8g2Fonts.setCursor(sz _x, 95);
+      u8g2Fonts.setCursor(50, 70);
       u8g2Fonts.print(assembleTime);
       
 

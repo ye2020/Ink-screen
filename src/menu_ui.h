@@ -24,6 +24,7 @@ void Enter_Page(menu_i32 index, button_status_e Key5Value , button_status_e Key0
 
 void main_page_ui_process(menu_u8 index);
 void weather_page_ui_process(void);
+void clock_page_ui_process(void);
 
 
 #endif

@@ -176,6 +176,7 @@ uint8_t return_UI_loging_flag(void)
  */
 void main_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
+	RTC_get_data_count++;    // 计数增加，超过一定值重新更新数据
 	main_page_ui_process(0);
 	switch (Key5Value)
 	{
@@ -259,6 +260,7 @@ void select_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	{
 		// 临界条件判断
 		(sub_index.select_current_index < 5) ? (sub_index.select_current_index++) : (sub_index.select_current_index = 5);
+		display_pninter(sub_index.select_current_index);			// 指针显示
 		Serial.println("down to choose");
 		Serial.println(sub_index.select_current_index);
 		break;
@@ -268,6 +270,7 @@ void select_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	{
         // 临界条件判断
 		(sub_index.select_current_index > 1) ? (sub_index.select_current_index--) : (sub_index.select_current_index = 1)  ;
+		display_pninter(sub_index.select_current_index);			// 指针显示
 		Serial.println("up to choose");
 		Serial.println(sub_index.select_current_index);
 		//main_page_ui_process(sub_index.main_current_index);    // 具体的UI绘制
@@ -368,7 +371,7 @@ void setting_page_process(button_status_e Key5Value, button_status_e Key0Value)
 void weather_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
 	Serial.println("weather status");
-
+	RTC_get_data_count++;    // 计数增加，超过一定值重新更新数据
 	weather_page_ui_process();
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
@@ -401,6 +404,8 @@ void weather_page_process(button_status_e Key5Value, button_status_e Key0Value)
 void clock_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
 	Serial.println("clock status");
+	clock_page_ui_process();
+	RTC_get_data_count++;    // 计数增加，超过一定值重新更新数据
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
 
@@ -575,3 +580,5 @@ void word_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	}
 
 }
+
+

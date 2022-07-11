@@ -17,12 +17,12 @@ bool ParseActualWeather(String content, struct ActualWeather* jgt)
     String z = "天气实况json配置失败:" + String(error.f_str()) + " " + content;
     if (String(error.f_str()) == "EmptyInput")
     {
-      display_partialLine(7, "天气实况json 重试中");
+      //display_partialLine(7, "天气实况json 重试中");
       return false;
     }
     else
     {
-      display_partialLine(7, z);
+     // display_partialLine(7, z);
       esp_sleep(0);
     }
   }
@@ -54,7 +54,8 @@ bool ParseActualWeather(String content, struct ActualWeather* jgt)
     else if (String(actual.status_code) == "AP100003") z = "心知系统内部错误：服务内部错误" ;
     else if (String(actual.status_code) == "AP100004") z = "心知系统内部错误：网关错误" ;
     else z = "天气实况异常:" + String(actual.status_code);
-    display_partialLine(7, z);
+    //display_partialLine(7, z);
+    Serial.print(z);
     Serial.print("天气实况异常:"); Serial.println(actual.status_code);
     const char* zf_t = z.c_str();//String转换char
     strcpy(jgt->weather_name, zf_t);
@@ -107,12 +108,12 @@ bool ParseFutureWeather(String content, struct FutureWeather* jgt)
     String z = "未来天气加载json配置失败:" + String(error.f_str()) + " " + content;
     if (String(error.f_str()) == "EmptyInput")
     {
-      display_partialLine(7, "未来天气json 重试中");
+      //display_partialLine(7, "未来天气json 重试中");
       return false;
     }
     else
     {
-      display_partialLine(7, z);
+    //  display_partialLine(7, z);
       esp_sleep(0);
     }
   }
@@ -144,7 +145,8 @@ bool ParseFutureWeather(String content, struct FutureWeather* jgt)
     else if (String(future.status_code) == "AP100003") z = "心知系统内部错误：服务内部错误" ;
     else if (String(future.status_code) == "AP100004") z = "心知系统内部错误：网关错误" ;
     else z = "未来天气异常:" + String(future.status_code);
-    display_partialLine(7, z);
+   // display_partialLine(7, z);
+    Serial.print(z);
     Serial.print("未来天气异常:"); Serial.println(future.status_code);
     const char* zf_t = z.c_str();//String转换char
     strcpy(jgt->date0_text_day, zf_t);
@@ -217,12 +219,12 @@ bool ParseLifeIndex(String content, struct LifeIndex* jgt)
     String z = "天气指数json配置失败:" + String(error.f_str()) + " " + content;
     if (String(error.f_str()) == "EmptyInput")
     {
-      display_partialLine(7, "天气指数json 重试中");
+    //  display_partialLine(7, "天气指数json 重试中");
       return false;
     }
     else
     {
-      display_partialLine(7, z);
+   //   display_partialLine(7, z);
       esp_sleep(0);
     }
   }
@@ -254,7 +256,7 @@ bool ParseLifeIndex(String content, struct LifeIndex* jgt)
     else if (String(actual.status_code) == "AP100003") z = "心知系统内部错误：服务内部错误" ;
     else if (String(actual.status_code) == "AP100004") z = "心知系统内部错误：网关错误" ;
     else z = "天气指数异常:" + String(actual.status_code);
-    display_partialLine(7, z);
+ //   display_partialLine(7, z);
     Serial.print("天气指数异常:"); Serial.println(actual.status_code);
     return true;
   }
