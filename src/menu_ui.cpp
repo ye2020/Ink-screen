@@ -26,6 +26,7 @@ void Menu_Main_Init(void)
 	sub_index.main_current_index = 0;
 	sub_index.setting_current_index = 8;
 	sub_index.select_current_index = 1;
+	sub_index.language_current_index = 2;
 	sub_index.Current_Page = MAIN_PAGE;
 
   display.fillScreen(baise);  // 填充屏幕
@@ -122,7 +123,7 @@ void main_page_ui_process(menu_u8 index)
 		BW_refresh();          //黑白刷新一次
 		
 		GetData();
-		display_main_home("单击以进入菜单...");
+		display_main_home("单击以进入菜单...","Click to enter the menu...");
 
 		ui_loging_flag = 1;
 	}
@@ -130,7 +131,9 @@ void main_page_ui_process(menu_u8 index)
 	if(RTC_get_data_count > 0xFFFFF)		// 更新数据
 	{
 		RTC_get_data_count = 0;
-		GetData();
+		RTC_re_count++;
+		Get_clock_data();
+		display_main_home_dynamic_UI();    // 动态UI更新时间显示
 	}
 }
 
@@ -155,25 +158,76 @@ void weather_page_ui_process(void)
 	// }
 }
 
-//天气页面UI处理
+//时钟页面UI处理
 void clock_page_ui_process(void)
 {
 
 	if(ui_loging_flag == 0)
 	{
-	//  BW_refresh();          //黑白刷新一次
-		GetData();
+		Serial.println("clock status");
+	  Get_clock_data();
+	  BW_refresh();
 	  BW_refresh();
       display_clock();        // 时钟显示界面
 	  ui_loging_flag = 1;
-
 	}
 
 	if(RTC_get_data_count > 0xFFFFF)		// 更新数据
 	{
+		RTC_re_count++;					//局刷计算
 		RTC_get_data_count = 0;
-		GetData();
-		display_clock();        // 时钟显示界面
+		Get_clock_data();
+		display_clock_dynamic_UI();        // 时钟显示界面
 	}
 }
 
+
+
+// 菜单页面ui进程
+void select_page_ui_process(void)
+{
+
+	if(ui_loging_flag == 0)		// 允许ui加载
+	{
+	  //BWClearScreen();   //黑一下刷新屏幕
+      BWClearScreen();   //黑一下刷新屏幕
+      display_main_select();
+      ui_loging_flag = 1;
+	}
+
+}
+
+
+// 设置页面UI进程
+void setting_page_ui_process(void)
+{
+	if(ui_loging_flag == 0)		// 允许ui加载
+	{
+		BWClearScreen();   //黑一下刷新屏幕
+		display_main_setting();
+		ui_loging_flag = 1;
+	}
+}
+
+
+
+// 语言页面UI进程
+void language_page_ui_process(void)
+{
+	if(ui_loging_flag == 0)		// 允许ui加载
+	{
+		BWClearScreen();   //黑一下刷新屏幕
+		display_main_language();
+		ui_loging_flag = 1;
+	}
+}
+
+void word_page_ui_process(void)
+{
+	if(ui_loging_flag == 0)		// 允许ui加载
+	{
+		BWClearScreen();   //黑一下刷新屏幕
+		display_main_word();
+		ui_loging_flag = 1;
+	}
+}

@@ -41,6 +41,7 @@ static key_value_e Key5Value_transition_function(button_status_e button5, button
 void Menu_Select_Item(menu_i32 current_index, button_status_e Key5Value, button_status_e Key0Value);
 uint8_t ui_loging_flag = 0;				//将ui加载标志位置0，表示允许加载ui
 
+
 //菜单操作表定义
 static OP_MENU_PAGE g_opStruct[] =
 	{
@@ -130,7 +131,7 @@ static key_value_e Key5Value_transition_function(button_status_e button5, button
 	/**************** 右按键对应键值 *******************/
 
 	// key0 长按返回主页面
-	case button_longPressStop2:
+	case button_longPressStart2:
 	{
 		Serial.println("KEY_home");		
 		return KEY_home;
@@ -158,6 +159,7 @@ static key_value_e Key5Value_transition_function(button_status_e button5, button
 
 	return KEY_none;
 }
+
 
 uint8_t return_UI_loging_flag(void)
 {
@@ -252,14 +254,14 @@ void main_page_process(button_status_e Key5Value, button_status_e Key0Value)
 void select_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
 	Serial.println("select status");
-	select_page_ui_process(0);
+	select_page_ui_process();
 
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
 	case KEY_dowm:
 	{
 		// 临界条件判断
-		(sub_index.select_current_index < 5) ? (sub_index.select_current_index++) : (sub_index.select_current_index = 5);
+		(sub_index.select_current_index < 5) ? (sub_index.select_current_index++) : (sub_index.select_current_index = 1);
 		display_pninter(sub_index.select_current_index);			// 指针显示
 		Serial.println("down to choose");
 		Serial.println(sub_index.select_current_index);
@@ -269,7 +271,7 @@ void select_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	case KEY_up:
 	{
         // 临界条件判断
-		(sub_index.select_current_index > 1) ? (sub_index.select_current_index--) : (sub_index.select_current_index = 1)  ;
+		(sub_index.select_current_index > 1) ? (sub_index.select_current_index--) : (sub_index.select_current_index = 5)  ;
 		display_pninter(sub_index.select_current_index);			// 指针显示
 		Serial.println("up to choose");
 		Serial.println(sub_index.select_current_index);
@@ -281,12 +283,13 @@ void select_page_process(button_status_e Key5Value, button_status_e Key0Value)
 		Serial.println("Enter the choice");
 		Serial.println((sub_index.select_current_index));
 		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
-		Enter_Page(sub_index.select_current_index, Key5Value, Key0Value);
+		Enter_Page(sub_index.select_current_index, button_none, button_none);
 		break;
 	}
 
 	case KEY_home:
 	{
+		ui_loging_flag = 0;
 		Menu_Main_Init();
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
@@ -311,15 +314,16 @@ void select_page_process(button_status_e Key5Value, button_status_e Key0Value)
  */
 void setting_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
-	//Serial.println("setting status");
-
+	Serial.println("setting status");
+	setting_page_ui_process();
 	/*************************** 键值处理 **************************/
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
 	case KEY_dowm:
 	{
 		// 临界条件判断
-		(sub_index.setting_current_index < 9)  ? (sub_index.setting_current_index++) : (sub_index.setting_current_index = 9);
+		(sub_index.setting_current_index < 9)  ? (sub_index.setting_current_index++) : (sub_index.setting_current_index = 8);
+		display_pninter(sub_index.setting_current_index);
 		Serial.println("down to choose");
 		Serial.println(sub_index.setting_current_index);
 		// main_page_ui_process(sub_index.main_current_index);
@@ -329,7 +333,8 @@ void setting_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	case KEY_up:
 	{
         // 临界条件判断
-		(sub_index.setting_current_index > 8) ? (sub_index.setting_current_index--) : (sub_index.setting_current_index = 8)  ;
+		(sub_index.setting_current_index > 8) ? (sub_index.setting_current_index--) : (sub_index.setting_current_index = 9)  ;
+		display_pninter(sub_index.setting_current_index);
 		Serial.println("up to choose");
 		Serial.println(sub_index.setting_current_index);
 		//main_page_ui_process(sub_index.main_current_index);    // 具体的UI绘制
@@ -340,12 +345,13 @@ void setting_page_process(button_status_e Key5Value, button_status_e Key0Value)
 		Serial.println("Enter the choice");
 		Serial.println((sub_index.setting_current_index));
 		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
-		Enter_Page((sub_index.setting_current_index), Key5Value, Key0Value);
+		Enter_Page((sub_index.setting_current_index), button_none, button_none);
 		break;
 	}
 
 	case KEY_home:
 	{
+		ui_loging_flag = 0;
 		Menu_Main_Init();
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
@@ -378,6 +384,7 @@ void weather_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_home:
 	{
+		ui_loging_flag = 0;
 		Menu_Main_Init();
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
@@ -403,7 +410,6 @@ void weather_page_process(button_status_e Key5Value, button_status_e Key0Value)
  */
 void clock_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
-	Serial.println("clock status");
 	clock_page_ui_process();
 	RTC_get_data_count++;    // 计数增加，超过一定值重新更新数据
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
@@ -411,6 +417,7 @@ void clock_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_home:
 	{
+		ui_loging_flag = 0;
 		Menu_Main_Init();
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
@@ -436,11 +443,13 @@ void clock_page_process(button_status_e Key5Value, button_status_e Key0Value)
 void configuration_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
 	Serial.println("configuration status");
+	word_page_ui_process();
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
 
 	case KEY_home:
 	{
+		ui_loging_flag = 0;
 		Menu_Main_Init();
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
@@ -466,11 +475,13 @@ void configuration_page_process(button_status_e Key5Value, button_status_e Key0V
 void read_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
 	Serial.println("read status");
+	word_page_ui_process();
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
 
 	case KEY_home:
 	{
+		ui_loging_flag = 0;
 		Menu_Main_Init();
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
@@ -496,11 +507,13 @@ void read_page_process(button_status_e Key5Value, button_status_e Key0Value)
 void game_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
 	Serial.println("game status");
+	word_page_ui_process();
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
 
 	case KEY_home:
 	{
+		ui_loging_flag = 0;
 		Menu_Main_Init();
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
@@ -526,12 +539,45 @@ void game_page_process(button_status_e Key5Value, button_status_e Key0Value)
 void language_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
 	Serial.println("language status");
-
+	language_page_ui_process();			// 静态UI绘制
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
 
+	case KEY_dowm:
+	{
+		// 临界条件判断
+		(sub_index.language_current_index < 3) ? (sub_index.language_current_index++) : (sub_index.language_current_index = 2);
+		display_pninter(sub_index.language_current_index);			// 指针显示
+		Serial.println("down to choose");
+		Serial.println(sub_index.language_current_index);
+		break;
+	}
+
+	case KEY_up:
+	{
+        // 临界条件判断
+		(sub_index.language_current_index > 2) ? (sub_index.language_current_index--) : (sub_index.language_current_index = 3)  ;
+		display_pninter(sub_index.language_current_index);			// 指针显示
+		Serial.println("up to choose");
+		Serial.println(sub_index.language_current_index);
+		break ;
+	}
+
+	case KEY_enter:
+	{
+		Serial.println("Enter the choice");
+		Serial.println((sub_index.language_current_index));
+
+		if(sub_index.language_current_index == 2)		language_choose_flag = 0; //中文
+		else if(sub_index.language_current_index == 3)	language_choose_flag = 1; //英文
+
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
+		Enter_Page(MAIN_PAGE,button_none,button_none);;
+		break;
+	}
 	case KEY_home:
 	{
+		ui_loging_flag = 0;
 		Menu_Main_Init();
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
@@ -558,12 +604,13 @@ void language_page_process(button_status_e Key5Value, button_status_e Key0Value)
 void word_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
 	Serial.println("word status"); 
-
+	word_page_ui_process();
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
 
 	case KEY_home:
 	{
+		ui_loging_flag = 0;
 		Menu_Main_Init();
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;

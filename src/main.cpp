@@ -74,6 +74,16 @@ using namespace std;
 #include <ESP8266HTTPClient.h>    //网页用
 #include <ArduinoJson.h>         //解析数据用
 
+/*  ***********************文件部分**************** */
+#include <LittleFS.h>        // 官方要求的新文件系统库  #include "FS.h"未来将不会得官方支持，已弃用
+const char* fsName = "LittleFS";
+FS* fileSystem = &LittleFS;
+LittleFSConfig fileSystemConfig = LittleFSConfig();
+
+static bool fsOK;
+File fsUploadFile;           // 建立文件对象用于闪存文件上传
+
+
 //声明gb2312.c
 #include "gb2312.cpp"
 //声明外部字体常量
@@ -101,7 +111,6 @@ void read_file_data();   //读取SD卡文件内容，保存与data3 字符串中
 void init_ping();      //屏幕初始化
 void init_setup();     //原程序的 setup
 void init_loop();    //原程序的 loop
-void read_filename();    //读取SD卡文件的名字，并且显示
 void show_type1(uint32_t now1_i);    //逐行显示    （效果好，速度较快）
 void show_type2(uint32_t now2_i);     //显示英文
 
@@ -230,6 +239,10 @@ Paint paint(image, 0, 0);
 Epd epd;
 unsigned long time_start_ms;
 unsigned long time_now_s;
+
+
+uint8_t language_choose_flag = 0;				//语言选择标志位，0为中文，1为英文
+
 
 //图标声明
 extern const unsigned char Bitmap_setup0[] PROGMEM;
@@ -360,20 +373,7 @@ void auto_eeprom()
     if (eepUserSet.clockJZJG < 10)   eepUserSet.clockJZJG = 10;     //时钟模式校准间隔 分钟
     Serial.println("EEPROM get");
   }
-  //Serial.print(EEPROM.percentUsed());
-  //Serial.println("% 当前使用的ESP闪存空间的数量");
 
-  /*Serial.print("eepUserSet.city[]:"); Serial.println(eepUserSet.city);
-    Serial.print("eepUserSet.weatherKey[]:"); Serial.println(eepUserSet.weatherKey);
-    Serial.print("eepUserSet.nightUpdata:"); Serial.println(eepUserSet.nightUpdata);
-    Serial.print("eepUserSet.inAWord[]:"); Serial.println(eepUserSet.inAWord);
-    Serial.print("eepUserSet.screenType:"); Serial.println(eepUserSet.screenType);
-    Serial.print("eepUserSet.batDisplayType:"); Serial.println(eepUserSet.batDisplayType);
-    Serial.print("eepUserSet.runMode:"); Serial.println(eepUserSet.runMode);
-    Serial.print("eepUserSet.txtNameLastTime:"); Serial.println(eepUserSet.txtNameLastTime);
-    Serial.print("eepUserSet.clockCompensate:"); Serial.println(eepUserSet.clockCompensate);
-    Serial.print("eepUserSet.setRotation:"); Serial.println(eepUserSet.setRotation);*/
-  //Serial.print("eepUserSet.clock_calibration_state:"); Serial.println(eepUserSet.clock_calibration_state);
 }
 
 
@@ -392,16 +392,28 @@ void setup()   //上电初始化
   // display_partialLine(3,"请等待5s");
   auto_eeprom();
   //GetData();
-  display_main_home("wifi连接中....");
+  display_main_home("wifi连接中....","wifi connecting....");
   get_wifi();               // 只能连接2.4G频段
+
+  
+  //****** 文件系统初始化 ******
+  fileSystemConfig.setAutoFormat(false);
+  fileSystem->setConfig(fileSystemConfig);
+  fsOK = fileSystem->begin();
+  if (fsOK) Serial.println("LittleFS 启动成功");
+  else  {
+    //display_bitmap_sleep("LittleFS 启动失败");
+    Serial.println("LittleFS 未能成功启动");
+  }
+
   button_init();            // 按键初始化
-  Menu_Main_Init();
+  Menu_Main_Init();         // 菜单初始化
 }
 
 void loop()   //主循环
 {
     button_loop();        // 检测按键输入
-    Menu_Select_main(key5_status_return(),key0_status_return());
+    Menu_Select_main(key5_status_return(),key0_status_return());    // 
 }
 
 #if 0     // 旧代码（主函数）
@@ -564,10 +576,6 @@ void get_time_weather()  {
   }  //获得天气,在里面调用处理天气的函数，处理完后显示
 }
 
-
-
-
-
 void GetData()
 {
     RTC_get_data_count = 0;
@@ -638,6 +646,48 @@ void GetData()
     ESP.rtcUserMemoryWrite(RTC_hour, &RTC_hour, sizeof(RTC_hour));
     ESP.rtcUserMemoryWrite(RTC_minute, &RTC_minute, sizeof(RTC_minute));
    ESP.rtcUserMemoryWrite(RTC_seconds, &RTC_seconds, sizeof(RTC_seconds));
+    //Serial.println(timeClient.getFormattedTime());
+    Serial.print("get the time :"); Serial.println(RTC_hour);   // 获取时间
+    timeClient.end();
+    // display_partialLine(7, "NTP，OK!");
+  }
+  else
+  {
+    String a; String b;
+    a = actual.last_update[11]; b = actual.last_update[12]; //String转char
+    RTC_hour = atoi(a.c_str()) * 10; //char转int
+    RTC_hour += atoi(b.c_str()) + 1;
+    ESP.rtcUserMemoryWrite(RTCdz_hour, &RTC_hour, sizeof(RTC_hour));
+    Serial.print("get the time :"); Serial.println(RTC_hour);
+    //display_partialLine(7, "Failed to obtain NTP time. Use weather time instead");     // 获取NTP时间失败,改用天气时间
+  } 
+}
+
+// 获取时间数据
+void Get_clock_data()
+{
+     uint8_t update_count = 0;
+  while (timeClient.update() == 0 && update_count < 6)
+  {
+    Serial.print("NTP超时计数:"); Serial.println(update_count);
+    delay(100);
+    if (update_count == 2) timeClient.setPoolServerName("s2k.time.edu.cn");
+    else if (update_count == 3) timeClient.setPoolServerName("1d.time.edu.cn");
+    else if (update_count == 4) timeClient.setPoolServerName("s1c.time.edu.cn");
+    else if (update_count == 5) timeClient.setPoolServerName("ntp.sjtu.edu.cn");
+        update_count++;
+  }
+
+  if (update_count < 6 )
+  {
+   
+    RTC_hour = timeClient.getHours();
+    RTC_minute = timeClient.getMinutes();
+    RTC_seconds = timeClient.getSeconds();
+    time_start_ms = millis();
+    ESP.rtcUserMemoryWrite(RTC_hour, &RTC_hour, sizeof(RTC_hour));
+    ESP.rtcUserMemoryWrite(RTC_minute, &RTC_minute, sizeof(RTC_minute));
+    ESP.rtcUserMemoryWrite(RTC_seconds, &RTC_seconds, sizeof(RTC_seconds));
     //Serial.println(timeClient.getFormattedTime());
     Serial.print("get the time :"); Serial.println(RTC_hour);   // 获取时间
     timeClient.end();
@@ -796,41 +846,575 @@ void display_clock() //时钟显示界面
 }
 
 #endif 
-void display_clock() //时钟显示界面
+
+// void parse_data_time(String content)    //处理得到的时间数据
+// {       
+//       const size_t capacity = JSON_OBJECT_SIZE(2) + 60;
+//       DynamicJsonBuffer JsonBuffer(capacity);
+//       JsonObject& root = JsonBuffer.parseObject(content);
+//       //const char* sysTime2 = root["sysTime2"]; // "2021-08-15 11:34:54"  //19个  日期时间[11]~[15]
+//       const char* sysTime1 = root["sysTime1"]; // "20210815113454"   //14个  时间[8]~[11]
+//       net_time[0] = sysTime1[0];net_time[1] = sysTime1[1];net_time[2] = sysTime1[2];net_time[3] = sysTime1[3];
+//       net_time[5] = sysTime1[4];net_time[6] = sysTime1[5];net_time[8] = sysTime1[6];net_time[9] = sysTime1[7];
+//       net_time[11] = sysTime1[8];net_time[12] = sysTime1[9];net_time[14] = sysTime1[10];net_time[15] = sysTime1[11];
+//       /*  下面是显示内容  */
+//       display_partialLine(1,net_time);  //在第一行显示时间
+// }
+
+void get_wifi()     //连接 wifi
+{ uint8_t i = 0;  //用来判断半分钟内是否联网成功 , 否则提示
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {   //检测 wifi 连接状态
+    delay(500);
+    i++;
+    Serial.print(".");
+    if(i>=20)
+    { wifi_flag = 0;   //表示wifi连接失败
+      Serial.println("Failed to connect wifi within 5s ");    // 5s内未成功连接wifi （编码显示问题 用串口输出的话 utf-8 会乱码 ，改GBK的话 显示器乱码 + 注释乱码）
+      Serial.println("Press key5 to enter reading mode");   // 按下key5键，进入阅读模式
+      // display_partialLine(1,"5s内未成功连接wifi");
+      // display_partialLine(3,"按下key5键,进入阅读模式");
+      break;
+    }
+  }
+
+  if( wifi_flag == 1 ) {   //表示wifi连接成功
+  // display_partialLine(1,"wifi连接成功");
+  // display_partialLine(3,"获取时间和天气中...");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
+  http.setTimeout(5000);
+
+  }
+
+}
+
+
+void read_file_data()   //读取SD卡文件内容，保存与data3 字符串中
+{ total_page = 1;
+  unsigned char flag=0;
+  uint32_t i,total_xs=0;  //总像素
+  if(sdInitOk == 1)
+  { 
+    File myFile = SD.open(file_name);
+    if (myFile)  //如果打开了file
+    {  
+        SD_data = myFile.readString();
+        myFile.close();
+    }
+    else    //如果file没有打开
+    { Serial.println("error opening test.txt"); }
+  }
+
+  if(select_file==2){     //小说
+  for(i = 0; i < SD_data.length(); i++)
+    {
+      if (SD_data[i] & 0x80) {        //计算页数
+     	  	i+=2;
+        total_xs+=14;
+    	} 
+      else
+       {  test_data += SD_data[i];
+          const char *character = test_data.c_str();             //String转换char
+          uint16_t zf_width = u8g2Fonts.getUTF8Width(character) ;       //获取英文的 像素大小 
+          total_xs+=zf_width;
+          test_data.clear();
+        }         
+    }
+    total_page = (total_xs/1400)-1;
+    total_xs =0;
+
+}
+    if(select_file==1)    //单词
+    {
+      for(i = 0; i < SD_data.length(); i++)
+      {
+          if(SD_data[i]=='/')  { flag++; }  if(flag>=6) {flag=0;total_page++;}
+      }
+    }
+    Serial.print("总页数---------------");
+    Serial.println(total_page);
+}
+
+void read_filename()    //读取SD卡文件的名字，并且显示
 {
-    //0-正常 1-首次获取网络时间失败 2-每10分钟的wifi连接超时 3-每10分钟的获取网络时间失败
+  boolean sw = 0;
+while( sw ==0 )
+{
+sw = 1;  //用于不输出TF卡自带的系统文件
+      sdBeginCheck();   //SD卡挂载检查
+      display_partialLine(1, "文件列表");    //显示  “文件列表”
+      uint8_t count = 2;
+      root = SD.open("/");   // 打开SD卡根目录
+      while (1) //输出列表
+      {
+        //ESP.wdtFeed();//喂狗 
+        File entry = root.openNextFile();
+        // Serial.print("entry:"); Serial.println(entry);
+        if (! entry) break;
+        String fileName = entry.name(); //文件名
+        size_t fileSize = entry.size(); //文件大小
+        //Serial.print(fileName); Serial.print(" "); Serial.println(fileSize);
+        String xiaoxi = String(count - 2) + ". " + fileName + "  " + String(fileSize) + "字节";
+        if(file_num_flag != 0)
+        display_partialLine(count, xiaoxi);
+        count++;file_num_flag++;
+        entry.close();
+      }
+      // Serial.println("file_num_flag==");
+      // Serial.println(file_num_flag);
+      file_num_flag = 0;
+}
+}
 
+void show_type2(uint32_t now2_i)
+ {  int line_flag =0 ,flag1=0,flag2=0,flag3=0;    //在哪行显示的标志
+    uint16_t x=5;  //用于记录X坐标
+    uint16_t zf_width;  //记录字符占的像素
+    uint32_t i,last_i;
+    unsigned char space_flag = 0;
+    for (i = now2_i; i < SD_data.length(); i++) 
+      { last_i = i; 
+        if (SD_data[i] & 0x80) 
+        {
+     	  	save_data += SD_data[i];save_data += SD_data[++i];save_data += SD_data[++i];
 
-  //每xx次局刷全刷一次
-  if (RTC_jsjs == 0) display.init(0, 1, 10, 0);
-  else               display.init(0, 0, 10, 0);
-  RTC_jsjs++; //局刷计数
+    	  } 
+        else
+        {
+          if(SD_data[i] == '/')  { SD_data[i]=' ';x=300; }
+          save_data += SD_data[i];  
+        } 
+        //SD_data[i]        
+        line_data += save_data;           //将每个字符拼接起来 组成一行的内容
+        if( i==last_i )  //用于判断是英文还是中文，进而确定占的X像素大小，来确定是否换行
+          { const char *character = save_data.c_str();             //String转换char
+            zf_width = u8g2Fonts.getUTF8Width(character) ;       //获取英文的 像素大小
+            x += zf_width;
+          } else {  x += 14;  }   
+          save_data.clear();            //save_data用完就清空，为下次准备  
+          
+        if(x >= 225 ||i == (SD_data.length()-1))  //该行读满了，就显示改行，没有读满就代表file读完了
+          { display_partialLine_2(line_flag , line_data);  //每保存完一行数据就显示
+            line_data.clear();
+            if(x >= 225)
+            {
+            line_flag++;
+            x = 5;Serial.println(1);    }
+            else { Serial.println(2);line_flag = 0;now_read2 =0; display_partialLine_BJZ(6,"(阅读完毕)",180, 4);break;}//退出，等待按键 }
+          }  
+        if(line_flag >= 7)      //可以通过记录i的值来确定 阅读到哪里
+          { Serial.println(3);
+            line_flag = 0;
+            now_read2 = i+1;  //  记录当前阅读位置  重要  要+1
+            break; //退出，等待按键
+          }
+          
+      }
 
-  ESP.rtcUserMemoryWrite(RTCdz_jsjs, &RTC_jsjs, sizeof(RTC_jsjs));
-  display.setPartialWindow(0, 0, 230,150); //设置局部刷新窗口
+}
+
+void show_type1(uint32_t now1_i)     //逐行显示    （效果好，速度较快）  1为中文  0为单词
+{   uint8_t line_flag =0 ;
+    uint16_t x=5;  //用于记录X坐标
+    uint16_t zf_width;
+    uint32_t i,last_i;
+    for (i = now1_i; i < SD_data.length(); i++) 
+      { last_i = i;  
+        if (SD_data[i] & 0x80) {
+     	  		save_data += SD_data[i];save_data += SD_data[++i];save_data += SD_data[++i];
+    	  	} else {  
+          save_data += SD_data[i]; }         
+          line_data += save_data;           //将每个字符拼接起来 组成一行的内容
+          if( i==last_i )  //用于判断是英文还是中文，进而确定占的X像素大小，来确定是否换行
+          {
+            const char *character = save_data.c_str();             //String转换char
+            zf_width = u8g2Fonts.getUTF8Width(character) ;       //获取英文的 像素大小
+            x += zf_width;
+          } else {  x += 14;  }       
+          save_data.clear();            //save_data用完就清空，为下次准备
+          if(x >= 225 ||i == (SD_data.length()-1))  //该行读满了，就显示改行，没有读满就代表file读完了
+          { display_partialLine(line_flag , line_data);  //每保存完一行数据就显示
+            line_data.clear();
+            if(x >= 225)
+            {
+            line_flag++;
+            x = 5;Serial.println(1);    }
+            else { Serial.println(2);line_flag = 0;now_read1 =0; display_partialLine_BJZ(6,"(阅读完毕)",180, 4);break;}//退出，等待按键 }
+          }
+          if(line_flag >= 7)      //可以通过记录i的值来确定 阅读到哪里
+          { Serial.println(3);
+            line_flag = 0;
+            now_read1 = i+1;  //  记录当前阅读位置  重要  要+1
+            break; //退出，等待按键
+          }
+      }
+}
+ 
+void clear_ping()   //刷新整个屏幕
+{
+  display_partialLine(0," ");
+  display_partialLine(1," ");
+  display_partialLine(2," ");
+  display_partialLine(3," ");
+  display_partialLine(4," ");
+  display_partialLine(5," ");
+  display_partialLine(6," ");
+  display_partialLine(7," ");
+}
+/*** 初始化AP配置 ***/
+void initApSTA()
+{
+  //WiFi.persistent(true);
+  WiFi.mode(WIFI_AP_STA); //设置工作模式
+  WiFi.softAPConfig(local_IP, gateway, subnet); //ap的网络参数
+  WiFi.softAP(ssid, password, random(1, 14), 0, 1);  //ap的名称和密码
+  WiFi.begin();
+}
+
+void initAp()
+{
+  //WiFi.persistent(true);
+  //WiFi.mode(WIFI_OFF);   //设置工作模式
+  WiFi.softAPConfig(local_IP, gateway, subnet); //ap的网络参数
+  WiFi.softAP(ssid, password, random(1, 14), 0, 1); //ap的名称、密码、信道、是否隐藏、同时连接数
+  WiFi.mode(WIFI_AP); //设置工作模式
+}
+boolean sdgzState = 1;
+void display_peiwang()
+{
+  uint16_t y0 = 15;
+  uint16_t y1 = y0 + 23;
+  uint16_t y2 = y1 + 23;
+  uint16_t x0 = 100;
+
+  display.setPartialWindow(0, 0, display.width(), display.height()); //设置局部刷新窗口
+  u8g2Fonts.setFont(chinese_gb2312);
   display.firstPage();
   do
   {
-    //************************ 时间显示 ************************
+    display.fillScreen(heise);  // 填充屏幕
+    display.display(1);         // 显示缓冲内容到屏幕，用于全屏缓冲
+    display.fillScreen(baise);  // 填充屏幕
+    display.display(1);         // 显示缓冲内容到屏幕，用于全屏缓冲
 
-      u8g2Fonts.setFont(u8g2_font_logisoso42_tn);
-      //拼装时间 小时和分,不够两位数需要补0
-      String hour, minute, assembleTime;
-      if (RTC_hour < 10)   hour = "0" + String(RTC_hour);
-      else                 hour = String(RTC_hour);
-      if (RTC_minute < 10) minute = "0" + String(RTC_minute);
-      else                 minute = String(RTC_minute);
-      assembleTime = hour + ":" + minute;
+    //display.drawInvertedBitmap(15, 15, Bitmap_fashe, 48, 41, heise); //发射站图标 图片
+    //display.drawInvertedBitmap(5, 0, Bitmap_pwewm, 64, 64, heise); //二维码图标
 
-      //显示时间
-      u8g2Fonts.setCursor(50, 70);
-      u8g2Fonts.print(assembleTime);
-      
+    u8g2Fonts.setCursor(x0, y0);
+    u8g2Fonts.print("热点名称:");
+    u8g2Fonts.setCursor(x0 + 65, y0);
+    u8g2Fonts.print(ssid);
 
-  }while (display.nextPage());
+    u8g2Fonts.setCursor(x0, y1);
+    u8g2Fonts.print("热点密码:");
+    u8g2Fonts.setCursor(x0 + 65, y1);
+    u8g2Fonts.print(String(password) + "(9个3)");
+
+    u8g2Fonts.setCursor(x0, y2);
+    u8g2Fonts.print("热点地址:");
+    u8g2Fonts.setCursor(x0 + 65, y2);
+    u8g2Fonts.print(WiFi.softAPIP());
+  }
+  while (display.nextPage());
 }
-  
 
+boolean qqtq_state1 = 1;      // 请求天气状态位
+uint32_t sta_count = 0;       // sta连接计数
+uint32_t getvcc_time = 0;     // 获取电池电压时间
+int8_t ap_state = 0;          // 启动ap模式状态 -1扫描到网络，尝试连接 0-无 1-WiFi未配置 2-配置的WiFi扫描不到 3-连接失败 4-连接成功 5-更换wifi
+boolean peiwangInitStete = 0; // 配网初始化 0-未初始化 1-已初始化
+
+void peiwang_mod()
+{
+  if (millis() - overtime > 300000) display_bitmap_sleep("* 操作超时 *");
+  if (peiwangInitStete == 0)
+  {
+    peiwangInitStete = 1;
+    u8g2Fonts.setFont(chinese_gb2312);
+    //display_batvcc();
+    if (ap_state <= 2)
+    {
+      //先检查wifi是否有配置
+      if (WiFi.SSID().length() == 0) ap_state = 1;  // wifi名称为空开启ap模式
+      else if (WiFi.SSID().length() > 0)  // wifi名称存在，尝试连接
+      {
+        display.firstPage();
+        do {
+          display.setPartialWindow(0, 0, display.width(), 56); //设置局部刷新窗口  图片
+        //  display.drawInvertedBitmap(124, 14, Bitmap_fashe, 48, 41, heise); //发射站图标
+        } while (display.nextPage());
+        ap_state = -1;
+      }
+    }
+    if (ap_state > 0)
+    {
+      if (ap_state == 4) initApSTA();
+      else  initAp();
+
+      if (webDisplayQh_state == 0)
+      {
+        initWebServer();     // 初始化WEB服务器、webServerOTA服务
+      }
+
+      display_peiwang();   // 显示热点信息
+      // display_batvcc();    // 获取电池电压
+
+      if (ap_state == 1) {
+        sta_count = 22;
+        display_partialLine(6, "WiFi未配置，已启动热点");
+      }
+      /*else if (ap_state == 2) {
+        sta_count = 21;
+        display_partialLine(6, "扫描不到已配置的WiFi，已启动热点");
+        }*/
+      else if (ap_state == 3) display_partialLine(6, WiFi.SSID() + " 连接失败，已启动热点");
+      else if (ap_state == 4) display_partialLine(6, WiFi.SSID() + " 连接成功(" + WiFi.localIP().toString() + ")");
+    }
+  }
+
+  if (ap_state == -1 || ap_state == 5) //扫描到网络，设置工作模式
+  {
+    //WiFi.setAutoConnect(1);   //设置自动连接wifi
+    if (ap_state == -1)
+    {
+      WiFi.mode(WIFI_STA);
+      WiFi.begin();
+    }
+    else if (ap_state == 5)
+    {
+      WiFi.persistent(true);  //需要保存
+      WiFi.mode(WIFI_AP_STA); //设置工作模式
+      WiFi.begin(sta_ssid, sta_password);
+    }
+
+    display_partialLine(6, "正在尝试连接：" + WiFi.SSID());
+
+    sta_count = 0;
+    while (WiFi.isConnected() == 0 && sta_count < 15) //尝试连接
+    {
+      ESP.wdtFeed();           // 喂狗
+      server.handleClient();
+      delay(900);
+      sta_count++;
+      if (sta_count >= 15)
+      {
+        peiwangInitStete = 0;
+        ap_state = 3; //wifi连接失败
+      }
+    }
+
+    if (WiFi.isConnected()) //连接成功，尝试获取天气参数
+    {
+      peiwangInitStete = 0;
+      if (ap_state == -1) //仅首次连接获取天气数据，https不能获取两次以上 http可以
+      {
+        String weatherKey_s = eepUserSet.weatherKey;
+        String city_s = eepUserSet.city;
+        String url_ActualWeather;
+        //拼装天气实况API地址
+        url_ActualWeather = "http://api.seniverse.com/v3/weather/now.json";
+        url_ActualWeather += "?key=" + weatherKey_s + "&location=" + city_s + "&language=" + language + "&unit=c";
+        ParseActualWeather(callHttp(url_ActualWeather), &actual);
+      }
+
+      if (ap_state == 5) {
+        webDisplayQh_state = 0;
+      }
+      ap_state = 4; //wifi连接成功
+    }
+  }
+  else if (ap_state > 0)
+  {
+    server.handleClient();  //处理http请求
+    // if (millis() - getvcc_time > 10000) //定时任务
+    // {
+    //   getvcc_time = millis();
+    //   // display_batvcc(); //更新电池电压
+    //   yield();
+    // }
+  }
+}
+
+void init_ping()      //屏幕初始化
+{
+  //display.init();
+  display.init(0, 1, 10, 1); // 串口使能 初始化完全刷新使能 复位时间 ret上拉使能
+  xiaobian();                  // 消除黑边
+  display.setRotation(3);      // 设置旋转方向 0-0° 1-90° 2-180° 3-270°
+  u8g2Fonts.begin(display);             // 将u8g2过程连接到Adafruit GFX
+  u8g2Fonts.setFontMode(1);             // 使用u8g2透明模式（这是默认设置）
+  u8g2Fonts.setFontDirection(0);        // 从左到右（这是默认设置）
+  u8g2Fonts.setForegroundColor(heise);  // 设置前景色
+  u8g2Fonts.setBackgroundColor(baise);  // 设置背景色
+  u8g2Fonts.setFont(chinese_gb2312);    // 设置字体
+}
+
+
+
+
+/*********************************************************************************************/
+/************************************ UI绘制函数  *********************************************/
+/************************************            **********************************************/
+/*********************************************************************************************/
+uint8_t RTC_re_count = 0;      // 局刷次数
+
+
+// 时钟页面静态UI显示
+void display_clock() //时钟显示界面
+{
+    //0-正常 1-首次获取网络时间失败 2-每10分钟的wifi连接超时 3-每10分钟的获取网络时间失败
+    // //每xx次局刷全刷一次
+    //if (RTC_jsjs == 0) display.init(0, 1, 10, 0);
+    // else               display.init(0, 0, 10, 0);
+    //RTC_jsjs++; //局刷计数
+
+    if(RTC_re_count > 6)
+    {
+      display.init(0, 1, 10, 0);
+      RTC_re_count = 0;
+    }
+    else 
+    {
+      display.init(0, 0, 10, 0);
+    }
+
+    //ESP.rtcUserMemoryWrite(RTCdz_jsjs, &RTC_jsjs, sizeof(RTC_jsjs));
+    display.setFullWindow(); //设置全部刷新窗口
+    display.firstPage();
+    do
+    {
+      //************************ 时间显示 ************************
+
+        u8g2Fonts.setFont(u8g2_font_logisoso46_tf);
+        //拼装时间 小时和分,不够两位数需要补0
+        String hour, minute, assembleTime;
+        if (RTC_hour < 10)   hour = "0" + String(RTC_hour);
+        else                 hour = String(RTC_hour);
+        if (RTC_minute < 10) minute = "0" + String(RTC_minute);
+        else                 minute = String(RTC_minute);
+        assembleTime = hour + ":" + minute;
+
+        //显示时间
+        u8g2Fonts.setCursor(80, 80);
+        u8g2Fonts.print(assembleTime);
+        
+        /*图标绘制*/
+        display.drawLine(0, 100, 290, 100, heise);  // 划线
+        display.drawLine(65, 15, 65, 85, heise); 
+        display.drawInvertedBitmap(10, 20 , Bitmap_shizhongMod,45, 45, heise);
+        display.drawInvertedBitmap(220,5,Bitmap_bat3,21,12,heise);   // 电量图标
+
+
+          /* 拼装日期 */
+  //拼装月日字符串 格式02-02
+      String day0, day1, day2;
+      for (uint8_t i = 5; i < 10; i++)
+      {
+        day0 += future.date0[i];
+        day1 += future.date1[i];
+        day2 += future.date2[i];
+      }
+
+      //拼装星期几
+      //提取年月日并转换成int
+      String nian0,yue0, ri0;
+      int nian0_i, yue0_i,ri0_i;
+      for (uint8_t i = 0; i <= 9; i++)
+      {
+        if (i <= 3)
+        {
+          nian0 += future.date0[i];
+        }
+        else if (i == 5 || i == 6)
+        {
+          yue0 += future.date0[i];
+        }
+        else if (i == 8 || i == 9)
+        {
+          ri0 += future.date0[i];
+        }
+      }
+      nian0_i = atoi(nian0.c_str()); yue0_i = atoi(yue0.c_str()); ri0_i = atoi(ri0.c_str());
+
+      //拼装白天和晚上的天气现象
+      String text_day0, text_night0, dn0_s;
+
+      if (strcmp(future.date0_text_day, future.date0_text_night) != 0) //今天
+      {
+        text_day0 = future.date0_text_day;
+        text_night0 = future.date0_text_night;
+        dn0_s = text_day0 + "转" + text_night0;
+      }
+      else dn0_s = future.date0_text_night;
+
+      //拼装高低温
+      String  high0,low0,hl0_s;
+      high0 = future.date0_high;
+      low0 = future.date0_low; 
+      hl0_s = "气温：" + high0 + "/" + low0;
+
+
+      //拼装未来天气详情并显示
+      String wltqxq0 = "今 " + day0 + " " + week_calculate(nian0_i, yue0_i, ri0_i) + " " + dn0_s + " " + hl0_s;
+
+      //计数长度
+      uint16_t wltqxq0_length = u8g2Fonts.getUTF8Width(wltqxq0.c_str());
+
+      //拼装数据 分成2段（今 06-21）&（周一 阴转阵雨）
+      String data0 = "今 " + day0; //今 06-21
+      String data1 = week_calculate(nian0_i, yue0_i, ri0_i) + " " + dn0_s; //周一 阴转阵雨
+
+
+      uint16_t data0_length = u8g2Fonts.getUTF8Width(data0.c_str());
+      uint16_t data1_length = u8g2Fonts.getUTF8Width(data1.c_str());
+
+      u8g2Fonts.setFont(chinese_gb2312);
+
+      u8g2Fonts.setCursor(30, 120);
+      u8g2Fonts.print(day0);
+      u8g2Fonts.setCursor(80, 120);
+      u8g2Fonts.print(data1);
+      u8g2Fonts.setCursor(150, 120);
+      u8g2Fonts.print(hl0_s);
+
+    }while (display.nextPage());
+}
+
+// 时钟动态UI
+void display_clock_dynamic_UI(void)
+{
+      //0-正常 1-首次获取网络时间失败 2-每10分钟的wifi连接超时 3-每10分钟的获取网络时间失败
+
+    //ESP.rtcUserMemoryWrite(RTCdz_jsjs, &RTC_jsjs, sizeof(RTC_jsjs));
+    u8g2Fonts.setFont(chinese_gb2312);
+    display.setPartialWindow(80,25, 230,70); //设置局部刷新窗口
+    display.firstPage();
+    do
+    {
+      //************************ 时间显示 ************************
+
+        u8g2Fonts.setFont(u8g2_font_logisoso46_tf);
+        //拼装时间 小时和分,不够两位数需要补0
+        String hour, minute, assembleTime;
+        if (RTC_hour < 10)   hour = "0" + String(RTC_hour);
+        else                 hour = String(RTC_hour);
+        if (RTC_minute < 10) minute = "0" + String(RTC_minute);
+        else                 minute = String(RTC_minute);
+        assembleTime = hour + ":" + minute;
+
+        //显示时间
+        u8g2Fonts.setCursor(80, 80);
+        u8g2Fonts.print(assembleTime);
+        
+        Serial.println(assembleTime);
+
+    }while (display.nextPage());
+}
+
+// 天气页面静态UI显示
 void display_main()
 {
    //u8g2Fonts.setFontMode(1);
@@ -1057,562 +1641,20 @@ void display_main()
     u8g2Fonts.setCursor(wltqxq_x_min + data_x0_max + jianGe_x + data_x1_max + jianGe_x, day_y2);
     u8g2Fonts.print(hl2_s);
 
-    //display.drawLine(275, 0, 275, 128, 0);
-    //****************************************************************************************************
-
-    //****** 显示屏幕中间的一句话 ******
-    // display.drawLine(0, 56, 295, 56, 0); //画水平线
-    // display.drawLine(0, 74, 295, 74, 0); //画水平线
-    // if (eepUserSet.inAWord_mod == 0)    //显示随机句子
-    // {
-    //   u8g2Fonts.setCursor(getCenterX(yiyan.hitokoto), 71);
-    //   u8g2Fonts.print(yiyan.hitokoto);
-    // }
-    // else if (eepUserSet.inAWord_mod == 1)// 自定义一句话
-    // {
-    //   u8g2Fonts.setCursor(getCenterX(eepUserSet.inAWord), 71);
-    //   u8g2Fonts.print(eepUserSet.inAWord);
-    // }
-    // else if (eepUserSet.inAWord_mod == 2)// 天数倒计时
-    // {
-    //   //提取目标月、日
-    //   String myStr1 = String(eepUserSet.inAWord);
-    //   String shijian_shijian = "";
-    //   uint8_t shijian_yue = (myStr1[3] - 48) * 10 + (myStr1[4] - 48);
-    //   uint8_t shijian_ri = (myStr1[5] - 48) * 10 + (myStr1[6] - 48);
-    //   shijian_shijian = String(shijian_yue) + "月" + String(shijian_ri) + "日";
-    //   //提取XX天后天前+事件
-    //   String myStr = daysCalculation(eepUserSet.inAWord, nian0_i, yue0_i, ri0_i) + "（" + shijian_shijian + "）";
-    //   u8g2Fonts.setCursor(getCenterX(myStr), 71);
-    //   u8g2Fonts.print(myStr);
-    // }
-    // else if (eepUserSet.inAWord_mod == 3)// B站粉丝
-    // {
-    //   String myStr = "";
-    //   if (RTC_Bfen_code == 0)
-    //   {
-    //     if (RTC_follower < 9999) myStr = "BiliBili: " + String(RTC_follower);
-    //     else if (RTC_follower < 99999999)
-    //     {
-    //       myStr = "BiliBili: " + String(float(RTC_follower) / 10000.0, 1) + "W";
-    //     }
-    //     u8g2Fonts.setFont(u8g2_font_cupcakemetoyourleader_tr);
-    //   }
-    //   else myStr = "B粉获取错误：" + String(RTC_Bfen_code);
-    //   u8g2Fonts.setCursor(getCenterX(myStr), 71);
-    //   u8g2Fonts.print(myStr);
-    //   u8g2Fonts.setFont(chinese_gb2312);
-    // }
-    //************* 显示温湿度-sht30 *************
-    if (dht30_temp != 0.0 && dht30_humi != 0.0)
-    {
-      u8g2Fonts.setFont(u8g2_font_ncenB08_te);
-      // display.drawInvertedBitmap(277, 76, Bitmap_tempSHT30, 16, 16, heise);
-      // display.drawInvertedBitmap(277, 103, Bitmap_humiditySHT30, 16, 16, heise);
-      //dht30_temp = -2.5;
-      //dht30_humi = 5.3;
-
-      //以下计算用于数值和图标居中
-      String zf_temp = (String)fabs(dht30_temp);  // float转换成String 取绝对值
-      const char* zf_t = zf_temp.c_str();         // String转换char
-      uint16_t zf_t_Width = u8g2Fonts.getUTF8Width(zf_t);
-
-      String zf_humi = (String)dht30_humi;
-      const char* zf_h = zf_humi.c_str();//String转换char
-      uint16_t zf_h_Width = u8g2Fonts.getUTF8Width(zf_h);
-
-      u8g2Fonts.setCursor(285 - zf_t_Width / 2 + 3, 101);
-      u8g2Fonts.print(dht30_temp, 1);
-      u8g2Fonts.setCursor(285 - zf_h_Width / 2 + 3, 128);
-      u8g2Fonts.print(dht30_humi, 1);
-      //display.drawLine(285, 0, 285, 128, 0);
-    }
-    
-    //电量显示 及 低压提示
-    //u8g2Fonts.setFont(chinese_gb2312);
-    // u8g2Fonts.setFont(u8g2_font_u8glib_4_tf); //u8g2_font_ncenB08_te
-    // if (eepUserSet.batDisplayType == 0)  //显示电压数值
-    // {
-    //   String batVcc_s = String(bat_vcc) + "V";
-    //   u8g2Fonts.setCursor(1, 113);
-    //   u8g2Fonts.print(batVcc_s);
-    //   //电量格数
-    //   // if (bat_vcc > 3.7)display.drawInvertedBitmap(0, 115, Bitmap_bat3, 21, 12, heise);
-    //   // else if (bat_vcc > 3.5)display.drawInvertedBitmap(0, 115, Bitmap_bat2, 21, 12, heise);
-    //   // else display.drawInvertedBitmap(6, 115, Bitmap_bat1, 21, 12, heise);
-    //   //display.drawInvertedBitmap(2, 78, Bitmap_wifidk, 26, 22, heise); //wifi断开
-    //   //display.drawInvertedBitmap(7, 79, Bitmap_dlsd, 19, 31, heise);  //闪电图标
-    // }
-  //   else  //显示电压百分比
-  //   {
-  //     String batVcc_s = String(uint8_t(getBatVolBfb(bat_vcc))) + "%";
-  //     u8g2Fonts.setCursor(4, 113);
-  //     u8g2Fonts.print(batVcc_s);
-  //     //电量格数
-  //     // if (bat_vcc > 3.7)display.drawInvertedBitmap(0, 115, Bitmap_bat3, 21, 12, heise);
-  //     // else if (bat_vcc > 3.5)display.drawInvertedBitmap(0, 115, Bitmap_bat2, 21, 12, heise);
-  //     // else display.drawInvertedBitmap(2, 115, Bitmap_bat1, 21, 12, heise);
-  //     //display.drawInvertedBitmap(0, 80, Bitmap_wifidk, 26, 22, heise); //wifi断开
-  //     //display.drawInvertedBitmap(2, 79, Bitmap_dlsd, 19, 31, heise); //闪电图标
-  //     //Serial.print("zf_length:"); Serial.println(zf_length);
-  //   }
-  //   if (bat_vcc <= BatLow) //电池电压大于阈值 显示闪电图标和电量
-  //   {
-  //     if (dht30_temp != 0.0 && dht30_humi != 0.0) //电池电压小于阈值并 温湿度传感器存在 则在屏幕最右侧显示低压图标
-  //     {
-  //      // display.drawInvertedBitmap(1, 92, Bitmap_batlow, 24, 35, heise);图片
-  //     }
-  //     else //电池电压小于阈值并 温湿度传感器不存在 则在屏幕最左侧显示低压图标
-  //     {
-  // //      display.drawInvertedBitmap(270, 92, Bitmap_batlow, 24, 35, heise);  图片
-  //     }
-  //     display_bitmap_sleep("* 电量过低 *");
-  //   }
-
   }while(display.nextPage());
-    //display.nextPage()
-//  while(digitalRead(key5)==1)
-//  {
-//    delay(1000);
-//  }
-      
-  // while (display.nextPage());
-}
-
-
-// void parse_data_time(String content)    //处理得到的时间数据
-// {       
-//       const size_t capacity = JSON_OBJECT_SIZE(2) + 60;
-//       DynamicJsonBuffer JsonBuffer(capacity);
-//       JsonObject& root = JsonBuffer.parseObject(content);
-//       //const char* sysTime2 = root["sysTime2"]; // "2021-08-15 11:34:54"  //19个  日期时间[11]~[15]
-//       const char* sysTime1 = root["sysTime1"]; // "20210815113454"   //14个  时间[8]~[11]
-//       net_time[0] = sysTime1[0];net_time[1] = sysTime1[1];net_time[2] = sysTime1[2];net_time[3] = sysTime1[3];
-//       net_time[5] = sysTime1[4];net_time[6] = sysTime1[5];net_time[8] = sysTime1[6];net_time[9] = sysTime1[7];
-//       net_time[11] = sysTime1[8];net_time[12] = sysTime1[9];net_time[14] = sysTime1[10];net_time[15] = sysTime1[11];
-//       /*  下面是显示内容  */
-//       display_partialLine(1,net_time);  //在第一行显示时间
-// }
-
-void get_wifi()     //连接 wifi
-{ uint8_t i = 0;  //用来判断半分钟内是否联网成功 , 否则提示
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {   //检测 wifi 连接状态
-    delay(500);
-    i++;
-    Serial.print(".");
-    if(i>=20)
-    { wifi_flag = 0;   //表示wifi连接失败
-      Serial.println("Failed to connect wifi within 5s ");    // 5s内未成功连接wifi （编码显示问题 用串口输出的话 utf-8 会乱码 ，改GBK的话 显示器乱码 + 注释乱码）
-      Serial.println("Press key5 to enter reading mode");   // 按下key5键，进入阅读模式
-      // display_partialLine(1,"5s内未成功连接wifi");
-      // display_partialLine(3,"按下key5键,进入阅读模式");
-      break;
-    }
-  }
-
-  if( wifi_flag == 1 ) {   //表示wifi连接成功
-  // display_partialLine(1,"wifi连接成功");
-  // display_partialLine(3,"获取时间和天气中...");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  http.setTimeout(5000);
-
-  }
 
 }
 
 
-void read_file_data()   //读取SD卡文件内容，保存与data3 字符串中
-{ total_page = 1;
-  unsigned char flag=0;
-  uint32_t i,total_xs=0;  //总像素
-  if(sdInitOk == 1)
-  { 
-    File myFile = SD.open(file_name);
-    if (myFile)  //如果打开了file
-    {  
-        SD_data = myFile.readString();
-        myFile.close();
-    }
-    else    //如果file没有打开
-    { Serial.println("error opening test.txt"); }
-  }
 
-  if(select_file==2){     //小说
-  for(i = 0; i < SD_data.length(); i++)
-    {
-      if (SD_data[i] & 0x80) {        //计算页数
-     	  	i+=2;
-        total_xs+=14;
-    	} 
-      else
-       {  test_data += SD_data[i];
-          const char *character = test_data.c_str();             //String转换char
-          uint16_t zf_width = u8g2Fonts.getUTF8Width(character) ;       //获取英文的 像素大小 
-          total_xs+=zf_width;
-          test_data.clear();
-        }         
-    }
-    total_page = (total_xs/1400)-1;
-    total_xs =0;
-
-}
-    if(select_file==1)    //单词
-    {
-      for(i = 0; i < SD_data.length(); i++)
-      {
-          if(SD_data[i]=='/')  { flag++; }  if(flag>=6) {flag=0;total_page++;}
-      }
-    }
-    Serial.print("总页数---------------");
-    Serial.println(total_page);
-}
-
-void read_filename()    //读取SD卡文件的名字，并且显示
-{
-  boolean sw = 0;
-while( sw ==0 )
-{
-sw = 1;  //用于不输出TF卡自带的系统文件
-      sdBeginCheck();   //SD卡挂载检查
-      display_partialLine(1, "文件列表");    //显示  “文件列表”
-      uint8_t count = 2;
-      root = SD.open("/");   // 打开SD卡根目录
-      while (1) //输出列表
-      {
-        //ESP.wdtFeed();//喂狗 
-        File entry = root.openNextFile();
-        // Serial.print("entry:"); Serial.println(entry);
-        if (! entry) break;
-        String fileName = entry.name(); //文件名
-        size_t fileSize = entry.size(); //文件大小
-        //Serial.print(fileName); Serial.print(" "); Serial.println(fileSize);
-        String xiaoxi = String(count - 2) + ". " + fileName + "  " + String(fileSize) + "字节";
-        if(file_num_flag != 0)
-        display_partialLine(count, xiaoxi);
-        count++;file_num_flag++;
-        entry.close();
-      }
-      // Serial.println("file_num_flag==");
-      // Serial.println(file_num_flag);
-      file_num_flag = 0;
-}
-}
-
-void show_type2(uint32_t now2_i)
- {  int line_flag =0 ,flag1=0,flag2=0,flag3=0;    //在哪行显示的标志
-    uint16_t x=5;  //用于记录X坐标
-    uint16_t zf_width;  //记录字符占的像素
-    uint32_t i,last_i;
-    unsigned char space_flag = 0;
-    for (i = now2_i; i < SD_data.length(); i++) 
-      { last_i = i; 
-        if (SD_data[i] & 0x80) 
-        {
-     	  	save_data += SD_data[i];save_data += SD_data[++i];save_data += SD_data[++i];
-
-    	  } 
-        else
-        {
-          if(SD_data[i] == '/')  { SD_data[i]=' ';x=300; }
-          save_data += SD_data[i];  
-        } 
-        //SD_data[i]        
-        line_data += save_data;           //将每个字符拼接起来 组成一行的内容
-        if( i==last_i )  //用于判断是英文还是中文，进而确定占的X像素大小，来确定是否换行
-          { const char *character = save_data.c_str();             //String转换char
-            zf_width = u8g2Fonts.getUTF8Width(character) ;       //获取英文的 像素大小
-            x += zf_width;
-          } else {  x += 14;  }   
-          save_data.clear();            //save_data用完就清空，为下次准备  
-          
-        if(x >= 225 ||i == (SD_data.length()-1))  //该行读满了，就显示改行，没有读满就代表file读完了
-          { display_partialLine_2(line_flag , line_data);  //每保存完一行数据就显示
-            line_data.clear();
-            if(x >= 225)
-            {
-            line_flag++;
-            x = 5;Serial.println(1);    }
-            else { Serial.println(2);line_flag = 0;now_read2 =0; display_partialLine_BJZ(6,"(阅读完毕)",180, 4);break;}//退出，等待按键 }
-          }  
-        if(line_flag >= 7)      //可以通过记录i的值来确定 阅读到哪里
-          { Serial.println(3);
-            line_flag = 0;
-            now_read2 = i+1;  //  记录当前阅读位置  重要  要+1
-            break; //退出，等待按键
-          }
-          
-      }
-
-}
-
-void show_type1(uint32_t now1_i)     //逐行显示    （效果好，速度较快）  1为中文  0为单词
-{   uint8_t line_flag =0 ;
-    uint16_t x=5;  //用于记录X坐标
-    uint16_t zf_width;
-    uint32_t i,last_i;
-    for (i = now1_i; i < SD_data.length(); i++) 
-      { last_i = i;  
-        if (SD_data[i] & 0x80) {
-     	  		save_data += SD_data[i];save_data += SD_data[++i];save_data += SD_data[++i];
-    	  	} else {  
-          save_data += SD_data[i]; }         
-          line_data += save_data;           //将每个字符拼接起来 组成一行的内容
-          if( i==last_i )  //用于判断是英文还是中文，进而确定占的X像素大小，来确定是否换行
-          {
-            const char *character = save_data.c_str();             //String转换char
-            zf_width = u8g2Fonts.getUTF8Width(character) ;       //获取英文的 像素大小
-            x += zf_width;
-          } else {  x += 14;  }       
-          save_data.clear();            //save_data用完就清空，为下次准备
-          if(x >= 225 ||i == (SD_data.length()-1))  //该行读满了，就显示改行，没有读满就代表file读完了
-          { display_partialLine(line_flag , line_data);  //每保存完一行数据就显示
-            line_data.clear();
-            if(x >= 225)
-            {
-            line_flag++;
-            x = 5;Serial.println(1);    }
-            else { Serial.println(2);line_flag = 0;now_read1 =0; display_partialLine_BJZ(6,"(阅读完毕)",180, 4);break;}//退出，等待按键 }
-          }
-          if(line_flag >= 7)      //可以通过记录i的值来确定 阅读到哪里
-          { Serial.println(3);
-            line_flag = 0;
-            now_read1 = i+1;  //  记录当前阅读位置  重要  要+1
-            break; //退出，等待按键
-          }
-      }
-}
-
-void clear_ping()   //刷新整个屏幕
-{
-  display_partialLine(0," ");
-  display_partialLine(1," ");
-  display_partialLine(2," ");
-  display_partialLine(3," ");
-  display_partialLine(4," ");
-  display_partialLine(5," ");
-  display_partialLine(6," ");
-  display_partialLine(7," ");
-}
-/*** 初始化AP配置 ***/
-void initApSTA()
-{
-  //WiFi.persistent(true);
-  WiFi.mode(WIFI_AP_STA); //设置工作模式
-  WiFi.softAPConfig(local_IP, gateway, subnet); //ap的网络参数
-  WiFi.softAP(ssid, password, random(1, 14), 0, 1);  //ap的名称和密码
-  WiFi.begin();
-}
-
-void initAp()
-{
-  //WiFi.persistent(true);
-  //WiFi.mode(WIFI_OFF);   //设置工作模式
-  WiFi.softAPConfig(local_IP, gateway, subnet); //ap的网络参数
-  WiFi.softAP(ssid, password, random(1, 14), 0, 1); //ap的名称、密码、信道、是否隐藏、同时连接数
-  WiFi.mode(WIFI_AP); //设置工作模式
-}
-boolean sdgzState = 1;
-void display_peiwang()
-{
-  uint16_t y0 = 15;
-  uint16_t y1 = y0 + 23;
-  uint16_t y2 = y1 + 23;
-  uint16_t x0 = 100;
-
-  display.setPartialWindow(0, 0, display.width(), display.height()); //设置局部刷新窗口
-  u8g2Fonts.setFont(chinese_gb2312);
-  display.firstPage();
-  do
-  {
-    display.fillScreen(heise);  // 填充屏幕
-    display.display(1);         // 显示缓冲内容到屏幕，用于全屏缓冲
-    display.fillScreen(baise);  // 填充屏幕
-    display.display(1);         // 显示缓冲内容到屏幕，用于全屏缓冲
-
-    //display.drawInvertedBitmap(15, 15, Bitmap_fashe, 48, 41, heise); //发射站图标 图片
-    //display.drawInvertedBitmap(5, 0, Bitmap_pwewm, 64, 64, heise); //二维码图标
-
-    u8g2Fonts.setCursor(x0, y0);
-    u8g2Fonts.print("热点名称:");
-    u8g2Fonts.setCursor(x0 + 65, y0);
-    u8g2Fonts.print(ssid);
-
-    u8g2Fonts.setCursor(x0, y1);
-    u8g2Fonts.print("热点密码:");
-    u8g2Fonts.setCursor(x0 + 65, y1);
-    u8g2Fonts.print(String(password) + "(9个3)");
-
-    u8g2Fonts.setCursor(x0, y2);
-    u8g2Fonts.print("热点地址:");
-    u8g2Fonts.setCursor(x0 + 65, y2);
-    u8g2Fonts.print(WiFi.softAPIP());
-  }
-  while (display.nextPage());
-}
-
-boolean qqtq_state1 = 1;      // 请求天气状态位
-uint32_t sta_count = 0;       // sta连接计数
-uint32_t getvcc_time = 0;     // 获取电池电压时间
-int8_t ap_state = 0;          // 启动ap模式状态 -1扫描到网络，尝试连接 0-无 1-WiFi未配置 2-配置的WiFi扫描不到 3-连接失败 4-连接成功 5-更换wifi
-boolean peiwangInitStete = 0; // 配网初始化 0-未初始化 1-已初始化
-
-void peiwang_mod()
-{
-  if (millis() - overtime > 300000) display_bitmap_sleep("* 操作超时 *");
-  if (peiwangInitStete == 0)
-  {
-    peiwangInitStete = 1;
-    u8g2Fonts.setFont(chinese_gb2312);
-    //display_batvcc();
-    if (ap_state <= 2)
-    {
-      //先检查wifi是否有配置
-      if (WiFi.SSID().length() == 0) ap_state = 1;  // wifi名称为空开启ap模式
-      else if (WiFi.SSID().length() > 0)  // wifi名称存在，尝试连接
-      {
-        display.firstPage();
-        do {
-          display.setPartialWindow(0, 0, display.width(), 56); //设置局部刷新窗口  图片
-        //  display.drawInvertedBitmap(124, 14, Bitmap_fashe, 48, 41, heise); //发射站图标
-        } while (display.nextPage());
-        ap_state = -1;
-      }
-    }
-    if (ap_state > 0)
-    {
-      if (ap_state == 4) initApSTA();
-      else  initAp();
-
-      if (webDisplayQh_state == 0)
-      {
-        initWebServer();     // 初始化WEB服务器、webServerOTA服务
-      }
-
-      display_peiwang();   // 显示热点信息
-      // display_batvcc();    // 获取电池电压
-
-      if (ap_state == 1) {
-        sta_count = 22;
-        display_partialLine(6, "WiFi未配置，已启动热点");
-      }
-      /*else if (ap_state == 2) {
-        sta_count = 21;
-        display_partialLine(6, "扫描不到已配置的WiFi，已启动热点");
-        }*/
-      else if (ap_state == 3) display_partialLine(6, WiFi.SSID() + " 连接失败，已启动热点");
-      else if (ap_state == 4) display_partialLine(6, WiFi.SSID() + " 连接成功(" + WiFi.localIP().toString() + ")");
-    }
-  }
-
-  if (ap_state == -1 || ap_state == 5) //扫描到网络，设置工作模式
-  {
-    //WiFi.setAutoConnect(1);   //设置自动连接wifi
-    if (ap_state == -1)
-    {
-      WiFi.mode(WIFI_STA);
-      WiFi.begin();
-    }
-    else if (ap_state == 5)
-    {
-      WiFi.persistent(true);  //需要保存
-      WiFi.mode(WIFI_AP_STA); //设置工作模式
-      WiFi.begin(sta_ssid, sta_password);
-    }
-
-    display_partialLine(6, "正在尝试连接：" + WiFi.SSID());
-
-    sta_count = 0;
-    while (WiFi.isConnected() == 0 && sta_count < 15) //尝试连接
-    {
-      ESP.wdtFeed();           // 喂狗
-      server.handleClient();
-      delay(900);
-      sta_count++;
-      if (sta_count >= 15)
-      {
-        peiwangInitStete = 0;
-        ap_state = 3; //wifi连接失败
-      }
-    }
-
-    if (WiFi.isConnected()) //连接成功，尝试获取天气参数
-    {
-      peiwangInitStete = 0;
-      if (ap_state == -1) //仅首次连接获取天气数据，https不能获取两次以上 http可以
-      {
-        String weatherKey_s = eepUserSet.weatherKey;
-        String city_s = eepUserSet.city;
-        String url_ActualWeather;
-        //拼装天气实况API地址
-        url_ActualWeather = "http://api.seniverse.com/v3/weather/now.json";
-        url_ActualWeather += "?key=" + weatherKey_s + "&location=" + city_s + "&language=" + language + "&unit=c";
-        ParseActualWeather(callHttp(url_ActualWeather), &actual);
-      }
-
-      if (ap_state == 5) {
-        webDisplayQh_state = 0;
-      }
-      ap_state = 4; //wifi连接成功
-    }
-  }
-  else if (ap_state > 0)
-  {
-    server.handleClient();  //处理http请求
-    // if (millis() - getvcc_time > 10000) //定时任务
-    // {
-    //   getvcc_time = millis();
-    //   // display_batvcc(); //更新电池电压
-    //   yield();
-    // }
-  }
-}
-
-void init_ping()      //屏幕初始化
-{
-  //display.init();
-  display.init(0, 1, 10, 1); // 串口使能 初始化完全刷新使能 复位时间 ret上拉使能
-  xiaobian();                  // 消除黑边
-  display.setRotation(3);      // 设置旋转方向 0-0° 1-90° 2-180° 3-270°
-  u8g2Fonts.begin(display);             // 将u8g2过程连接到Adafruit GFX
-  u8g2Fonts.setFontMode(1);             // 使用u8g2透明模式（这是默认设置）
-  u8g2Fonts.setFontDirection(0);        // 从左到右（这是默认设置）
-  u8g2Fonts.setForegroundColor(heise);  // 设置前景色
-  u8g2Fonts.setBackgroundColor(baise);  // 设置背景色
-  u8g2Fonts.setFont(chinese_gb2312);    // 设置字体
-}
-// 设置页面ui处理
-void select_page_ui_process(uint8_t y)
-{
-
-	if(ui_loging_flag == 0)		// 允许ui加载
-	{
-
-	// 	display_partialLine(4,"阅读");
-	    BWClearScreen();   //黑一下刷新屏幕
-      BWClearScreen();   //黑一下刷新屏幕
-
-      // display_partialLine(1,"时钟");     
-      display_main_select();
-      // display_partialLine(5,"游戏");
-      // display_partialLine_BJZ(4,"→",20,4);
-      
-      ui_loging_flag = 1;
-	}
-}
-
-
-void display_main_home(String detail)
+// 主页静态UI显示
+void display_main_home(String GHN,String ENG)
 {
     display.setFullWindow(); //设置全屏刷新 height
     display.firstPage();
   do
   {  
 
-    
     //****** 显示实况温度和天气图标 ******
       String hour, minute;
 
@@ -1638,8 +1680,9 @@ void display_main_home(String detail)
     u8g2Fonts.setFont(chinese_gb2312);
     u8g2Fonts.setCursor(50, 120);  //显示实况温度
 
-    const char* detail_c = detail.c_str();                         //String转换char
-    u8g2Fonts.print(detail_c);
+    // const char* detail_c = detail.c_str();                         //String转换char
+    // u8g2Fonts.print(detail_c);
+    language_choose_display(GHN,ENG);     // 中英转换函数
 
     display.drawInvertedBitmap(220,5,Bitmap_bat3,21,12,heise);   // 电量图标
 
@@ -1662,6 +1705,35 @@ void display_main_home(String detail)
   // while (display.nextPage());
 }
 
+// 主页面动态UI
+void display_main_home_dynamic_UI(void)
+{
+  u8g2Fonts.setFont(chinese_gb2312);
+  display.setPartialWindow(0, 0, 64, 36); //设置局部刷新窗口
+  display.setPartialWindow(0, 0, 64, 36); //设置局部刷新窗口
+
+  display.firstPage();
+
+    do{
+          //****** 显示实况温度和天气图标 ******
+      String hour, minute;
+
+      if (RTC_hour < 10)   hour = "0" + String(RTC_hour);
+      else                 hour = String(RTC_hour);
+      if (RTC_minute < 10) minute = "0" + String(RTC_minute);
+      else                 minute = String(RTC_minute);
+
+    //提取最后更新时间的 仅提取 小时:分钟
+      u8g2Fonts.setCursor(10, 16); //实时时间-小时
+      u8g2Fonts.print(hour);
+      u8g2Fonts.setCursor(37, 16); //实时时间-小时
+      u8g2Fonts.print(minute);
+      u8g2Fonts.setCursor(25, 16); //实时时间-小时
+      u8g2Fonts.print(":");
+
+      Serial.println(minute);
+  }while(display.nextPage());
+}
 
 void display_main_select(void)
 {
@@ -1669,8 +1741,6 @@ void display_main_select(void)
     display.firstPage();
   do
   {  
-
-
 
     //****** 显示小图标和详情信息 ******
     display.drawInvertedBitmap(10, 9, Bitmap_ACE,42, 85, heise);
@@ -1680,24 +1750,28 @@ void display_main_select(void)
     //display.drawLine(163, 0, 163, 100, baise);
     display.drawLine(0, 100, 250, 100, heise);
     u8g2Fonts.setFont(chinese_gb2312);
-    u8g2Fonts.setCursor(50, 120);  //显示实况温度
-    u8g2Fonts.print("单击以选择,双击以进入...");
+    u8g2Fonts.setCursor(30, 120);  //显示实况温度
+   // u8g2Fonts.print("单击以选择,双击以进入...");
+    language_choose_display("单击以选择,双击以进入..." , "Click to select, double-click to enter...");
 
     u8g2Fonts.setCursor(150, 15);  //显示实况温度
-    u8g2Fonts.print("时钟");
+    language_choose_display("时钟","clock");
+    //u8g2Fonts.print("时钟");
     u8g2Fonts.setCursor(150, 35);  //显示实况温度
-    u8g2Fonts.print("天气");
+    language_choose_display("天气","weather");
+   // u8g2Fonts.print("天气");
     u8g2Fonts.setCursor(150, 55);  //显示实况温度
-    u8g2Fonts.print("配置");
+    language_choose_display("配置","configuration");
+   // u8g2Fonts.print("配置");
     u8g2Fonts.setCursor(150, 75);  //显示实况温度
-    u8g2Fonts.print("阅读");
+    language_choose_display("阅读","read");
+    //u8g2Fonts.print("阅读");
     u8g2Fonts.setCursor(150, 95);  //显示实况温度
-    u8g2Fonts.print("游戏");
+    language_choose_display("游戏","game");
+    //u8g2Fonts.print("游戏");
 
 
     display.drawInvertedBitmap(220,5,Bitmap_bat3,21,12,heise);   // 电量图标
-
-
 
   }while(display.nextPage());
  
@@ -1716,28 +1790,34 @@ void display_pninter(uint8_t subindex)
       y = 15;
       break;
     }
-
     case 2:
     {
       y = 35;
       break;
     }
-
     case 3:
     {
       y = 55;
       break;
     }
-
       case 4:
     {
       y = 75;
       break;
     }
-
       case 5:
     {
       y = 95;
+      break;
+    }
+    case 8:
+    {
+      y = 35;
+      break;
+    }
+    case 9:
+    {
+      y = 55;
       break;
     }
     default:
@@ -1750,16 +1830,109 @@ void display_pninter(uint8_t subindex)
   do{
       display.drawCircle(120, y - 5 ,4,0);     // 画圈
   }while(display.nextPage());
-  //  display.drawLine(x1 - 2, y2 + 2, x1 + 60, y2 + 2, 0);
-  // paint.SetWidth(12);   //70大字    12
-  // paint.SetHeight(12);   //160       65
-  //  paint.SetRotate(ROTATE_270);
-  // //paint.Clear(UNCOLORED);             // 清除图像
-  // paint.DrawStringAt(0,0, "o", &myFont, COLORED);     //&Font12 //这将在帧缓冲区上显示一个字符串，但不会刷新
-  // epd.SetFrameMemory(paint.GetImage(), 120 , 85, paint.GetWidth(), paint.GetHeight());
-  // epd.DisplayFrame();   //更新显示
-  // epd.SetFrameMemory(paint.GetImage(), 120 , 85, paint.GetWidth(), paint.GetHeight());
-  // epd.DisplayFrame();
-  // set_flag = 1;
+
 }
 
+// 设置界面UI绘制
+void display_main_setting(void)
+{
+    display.setFullWindow(); //设置全屏刷新 height
+    display.firstPage();
+    
+    do{
+    //****** 显示小图标和详情信息 ******
+    display.drawInvertedBitmap(10, 9, Bitmap_ACE,42, 85, heise);
+    display.drawInvertedBitmap(52, 9 , Bitmap_ACErig,41, 85, heise);
+    display.drawLine(0, 9, 100, 9, baise); //画水平线
+    display.drawLine(100, 12, 100, 88, heise); //画水平线
+    //display.drawLine(163, 0, 163, 100, baise);
+    display.drawLine(0, 100, 250, 100, heise);
+    u8g2Fonts.setFont(chinese_gb2312);
+    u8g2Fonts.setCursor(50, 120);  //显示实况温度
+    language_choose_display("单击以选择,双击以进入..." , "Click to select, double-click to enter...");
+
+    u8g2Fonts.setCursor(150, 35);  //显示实况温度
+    language_choose_display("语言","language");
+    //u8g2Fonts.print("语言");
+    u8g2Fonts.setCursor(150, 55);  //显示实况温度
+    //u8g2Fonts.print("字号");
+    language_choose_display("字号","words size");
+
+    display.drawInvertedBitmap(220,5,Bitmap_bat3,21,12,heise);   // 电量图标
+
+  }while(display.nextPage());
+}
+
+
+// 语言页面UI绘制
+void display_main_language(void)
+{
+    display.setFullWindow(); //设置全屏刷新 height
+    display.firstPage();
+    
+    do{
+    //****** 显示小图标和详情信息 ******
+    display.drawInvertedBitmap(10, 9, Bitmap_ACE,42, 85, heise);
+    display.drawInvertedBitmap(52, 9 , Bitmap_ACErig,41, 85, heise);
+    display.drawLine(0, 9, 100, 9, baise); //画水平线
+    display.drawLine(100, 12, 100, 88, heise); //画水平线
+    //display.drawLine(163, 0, 163, 100, baise);
+    display.drawLine(0, 100, 250, 100, heise);
+    u8g2Fonts.setFont(chinese_gb2312);
+    u8g2Fonts.setCursor(30, 120);  //显示实况温度
+    language_choose_display("单击以选择,双击以进入..." , "Click to select, double-click to enter...");
+    //u8g2Fonts.print("单击以选择,双击以进入...");
+
+    u8g2Fonts.setCursor(150, 35);  //显示实况温度
+    u8g2Fonts.print("简体中文");
+    u8g2Fonts.setCursor(150, 55);  //显示实况温度
+    u8g2Fonts.print("English");
+
+
+    display.drawInvertedBitmap(220,5,Bitmap_bat3,21,12,heise);   // 电量图标
+
+  }while(display.nextPage());
+}
+
+// 语言页面UI绘制
+void display_main_word(void)
+{
+    display.setFullWindow(); //设置全屏刷新 height
+    display.firstPage();
+    
+    do{
+    //****** 显示小图标和详情信息 ******
+    display.drawInvertedBitmap(10, 9, Bitmap_ACE,42, 85, heise);
+    display.drawInvertedBitmap(52, 9 , Bitmap_ACErig,41, 85, heise);
+    display.drawLine(0, 9, 100, 9, baise); //画水平线
+    display.drawLine(100, 12, 100, 88, heise); //画水平线
+    //display.drawLine(163, 0, 163, 100, baise);
+    display.drawLine(0, 100, 250, 100, heise);
+    u8g2Fonts.setFont(chinese_gb2312);
+    u8g2Fonts.setCursor(30, 120);  //显示实况温度
+    language_choose_display("双击右键返回..." , "Double click to return...");
+    //u8g2Fonts.print("单击以选择,双击以进入...");
+
+
+    u8g2Fonts.setCursor(150, 50);  //显示实况温度
+    language_choose_display("开发中...","developing...");
+
+    display.drawInvertedBitmap(220,5,Bitmap_bat3,21,12,heise);   // 电量图标
+
+  }while(display.nextPage());
+}
+
+// 中英转换函数
+void language_choose_display(String CHN,String ENG)
+{
+  if(language_choose_flag == 0)   //显示中文
+  {
+    const char* CHN_c = CHN.c_str(); 
+    u8g2Fonts.print(CHN_c);
+  }
+else if(language_choose_flag == 1)  // 显示英文
+  {
+    const char* ENG_c = ENG.c_str(); 
+    u8g2Fonts.print(ENG_c);
+  }
+}

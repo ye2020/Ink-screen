@@ -458,12 +458,14 @@ typedef enum
     SCREEN_MODE_game,           // 游戏页面
 } screen_status_e;
 
+extern uint8_t language_choose_flag;
 extern LifeIndex life_index; // 创建结构体变量 生活指数
 extern boolean qqtq_state1 ;      // 请求天气状态位
 extern uint32_t sta_count ;       // sta连接计数
 extern uint32_t getvcc_time ;     // 获取电池电压时间
 extern int8_t ap_state ;          // 启动ap模式状态 -1扫描到网络，尝试连接 0-无 1-WiFi未配置 2-配置的WiFi扫描不到 3-连接失败 4-连接成功 5-更换wifi
 extern boolean peiwangInitStete ; // 配网初始化 0-未初始化 1-已初始化
+extern uint8_t RTC_re_count;      // 局刷次数
 
 
 
@@ -478,11 +480,20 @@ extern boolean peiwangInitStete ; // 配网初始化 0-未初始化 1-已初始�
  void handleFileUpload();
  String byteConversion(size_t zijie); //字节换算
  void get_time_weather();     //读取时间和天气 并且显示
- void select_page_ui_process(uint8_t y);
-void display_main_home(String detail);
+void display_main_home(String GHN,String ENG);
 void GetData();
 void display_pninter(uint8_t subindex);
 void display_clock(); //时钟显示界面
+void read_filename();    //读取SD卡文件的名字，并且显示
+void display_main_home_dynamic_UI(void);
+void Get_clock_data();
+void display_main_select(void);
+void display_main_setting(void);
+void display_main_language(void);
+void language_choose_display(String CHN,String ENG);
+void display_main_word(void);
+void display_clock_dynamic_UI(void);
+
 
 
 
