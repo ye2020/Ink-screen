@@ -222,12 +222,29 @@ void language_page_ui_process(void)
 	}
 }
 
+// 字号模式进程
 void word_page_ui_process(void)
 {
 	if(ui_loging_flag == 0)		// 允许ui加载
 	{
 		BWClearScreen();   //黑一下刷新屏幕
 		display_main_word();
+		ui_loging_flag = 1;
+	}
+}
+
+// 配置模式进程
+void configuration_page_ui_process(void)
+{
+	if(ui_loging_flag == 0)		// 允许ui加载
+	{
+		Serial.println("configuration status");
+		BWClearScreen();   //黑一下刷新屏幕
+		//display_peiwang();
+		//peiwang_mod();
+		display_peiwang();
+		peiwang_mod_tesk();
+
 		ui_loging_flag = 1;
 	}
 }

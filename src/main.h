@@ -493,7 +493,9 @@ void display_main_language(void);
 void language_choose_display(String CHN,String ENG);
 void display_main_word(void);
 void display_clock_dynamic_UI(void);
-
+void display_peiwang(void);
+void peiwang_mod(void);
+void peiwang_mod_tesk(void);
 
 
 

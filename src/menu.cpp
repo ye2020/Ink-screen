@@ -442,8 +442,7 @@ void clock_page_process(button_status_e Key5Value, button_status_e Key0Value)
  */
 void configuration_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
-	Serial.println("configuration status");
-	word_page_ui_process();
+	configuration_page_ui_process();
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
 
