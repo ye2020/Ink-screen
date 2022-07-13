@@ -127,7 +127,7 @@ boolean sdBeginCheck() //SD挂载检查
   {
     RTC_SDInitError = 0;
     ESP.rtcUserMemoryWrite(RTCdz_SDInitError, &RTC_SDInitError, sizeof(RTC_SDInitError));
-    Serial.println("SD卡挂载成功");
+    Serial.println("SD load success");
     sdInitOk = 1;
     return 1;
   }
@@ -135,7 +135,7 @@ boolean sdBeginCheck() //SD挂载检查
   {
     RTC_SDInitError = 0;
     ESP.rtcUserMemoryWrite(RTCdz_SDInitError, &RTC_SDInitError, sizeof(RTC_SDInitError));
-    Serial.println("无法挂载SD卡");
+    Serial.println("SD loading fail");
     sdInitOk = 0;
     return 0;
   }

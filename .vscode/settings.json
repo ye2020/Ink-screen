@@ -4,6 +4,7 @@
         "menu_conf.h": "c",
         "menu.h": "c",
         "hardware_setting.h": "c",
-        "menu_ui.h": "c"
+        "menu_ui.h": "c",
+        "algorithm": "cpp"
     }
 }

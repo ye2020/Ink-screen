@@ -504,7 +504,14 @@ void peiwang_mod(void);
 void peiwang_mod_tesk(void);
 uint8_t return_wifi_num(void);
 void display_wifi_connect(uint8_t sub_index_wifi);
-void display_bottom_words(String GHN,String ENG);
+void display_bottom_words(String GHN,String ENG,uint16_t x);
+void display_read_static_1();
+void display_SD_file_ui(void);
+uint8_t return_file_num_flag(void);
+void display_SD_file_dynamic_ui(uint8_t file_num,uint8_t page_num);
+void display_SD_file_read(uint8_t file_num,uint8_t page_num);
+void read_file_data(String File_name);   //读取SD卡文件内容，保存与data3 字符串中
+void show_type1(uint32_t now1_i, uint8_t file_deinx)   ;
 
 
 

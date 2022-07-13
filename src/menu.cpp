@@ -501,13 +501,67 @@ void configuration_page_process(button_status_e Key5Value, button_status_e Key0V
  * @retval      none
  * @attention
  */
+uint8_t  page_current_sta = 1;		//当前页码
+
 void read_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
-	Serial.println("read status");
-	word_page_ui_process();
+	uint8_t  page_num = ((return_file_num_flag() / 5 ) + 1);	//总页码数
+
+	read_page_ui_process();
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
+	case KEY_dowm:
+	{
+		// 临界条件判断
+		if(sub_index.read_current_index <  (34) )
+		(sub_index.read_current_index++) ;
+		else
+		{
+		(sub_index.read_current_index = 30 ); 
+		page_current_sta++;
+		}
 
+		if(page_current_sta >  page_num) page_current_sta = 1;  // 重返第一页
+
+		Serial.printf("page=%d",page_current_sta);
+		display_SD_file_dynamic_ui((sub_index.read_current_index % 30 ),page_current_sta);
+		display_pninter(sub_index.read_current_index);			// 指针显示
+		Serial.println("down to choose");
+		Serial.println(sub_index.read_current_index);
+		break;
+	}
+
+	case KEY_up:
+	{
+        // 临界条件判断
+		if(sub_index.read_current_index > 30)
+		(sub_index.read_current_index--) ;
+		else
+		{
+		(sub_index.read_current_index =  (34 ) );
+		 page_current_sta--;
+		}
+
+		if(page_current_sta <  1) page_current_sta = page_num;  // 重返最后一页
+
+		display_SD_file_dynamic_ui((sub_index.read_current_index % 30 ),page_current_sta);  
+		display_pninter(sub_index.read_current_index);			// 指针显示
+		Serial.printf("page=%d",page_current_sta);
+		Serial.println("up to choose");
+		Serial.println(sub_index.read_current_index);
+		break ;
+	}
+
+	case KEY_enter:
+	{
+		Serial.println("Enter the choice");
+		Serial.println((sub_index.read_current_index));
+
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
+		
+		Enter_Page(SELECT_PAGE,button_none,button_none);
+		break;
+	}
 	case KEY_home:
 	{
 		ui_loging_flag = 0;
@@ -654,7 +708,6 @@ void word_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	default:
 		break;
 	}
-
 }
 
 

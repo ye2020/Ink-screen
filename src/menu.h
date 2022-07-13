@@ -52,6 +52,7 @@ typedef struct Menu_Key_Index
 	menu_u8 select_current_index ; 
   menu_u8 language_current_index;
   menu_u8 configuration_current_index;
+  menu_u8 read_current_index;
   
 	menu_u8 Current_Page ;      // µ±Ç°Ò³Ãæ
 }Key_Index;

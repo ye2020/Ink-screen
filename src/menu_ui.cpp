@@ -28,9 +28,11 @@ void Menu_Main_Init(void)
 	sub_index.select_current_index = 1;
 	sub_index.language_current_index = 2;
 	sub_index.configuration_current_index = 20;
+	sub_index.read_current_index = 30;				// 不想跟指针索引重合
+
 	sub_index.Current_Page = MAIN_PAGE;
 
-  display.fillScreen(baise);  // 填充屏幕
+  	display.fillScreen(baise);  // 填充屏幕
 	display.drawInvertedBitmap(50, 3, Bitmap_m, 45, 45, heise);
    BW_refresh();          //黑白刷新一次
 
@@ -244,9 +246,25 @@ void configuration_page_ui_process(void)
 		BWClearScreen();   //黑一下刷新屏幕
 		//display_peiwang();
 		//peiwang_mod();
-		display_peiwang();
-		peiwang_mod_tesk();
+		display_peiwang();			// 静态UI第1部分
+		peiwang_mod_tesk();			// 静态UI第2部分
 
 		ui_loging_flag = 1;
 	}
 }
+
+// 阅读模式进程
+void read_page_ui_process(void)
+{
+	if(ui_loging_flag == 0)		// 允许ui加载
+	{
+		Serial.println("read status");
+		BWClearScreen();   //黑一下刷新屏幕
+
+		display_read_static_1();		//静态UI第一部分
+		display_SD_file_ui();			// 读取SD卡内容
+		//read_filename();
+		ui_loging_flag = 1;
+	}
+}
+

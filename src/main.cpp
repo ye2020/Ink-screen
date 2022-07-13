@@ -112,7 +112,7 @@ void read_file_data();   //读取SD卡文件内容，保存与data3 字符串中
 void init_ping();      //屏幕初始化
 void init_setup();     //原程序的 setup
 void init_loop();    //原程序的 loop
-void show_type1(uint32_t now1_i);    //逐行显示    （效果好，速度较快）
+// void show_type1(uint32_t now1_i);    //逐行显示    （效果好，速度较快）
 void show_type2(uint32_t now2_i);     //显示英文
 
 void get_wifi(const char* SSID,const char* Password) ;    //连接 wifi
@@ -147,7 +147,7 @@ IPAddress dns1(114, 114, 114, 114);
 IPAddress dns2(114, 114, 115, 115);
 // const char *ssid     = "8B110_5G_2";
 // const char *password = "DGUT8B110";
-unsigned char file_num_flag = 0;
+static unsigned char file_num_flag = 0;  // SD卡内的文件数
 unsigned char page_flag = 1 ;   //界面标志位   123 分别表示对应界面
 unsigned char loop_flag ;   //循环显示标志位 
 unsigned char wifi_flag = 0 ; //wifi连接标志位  1为成功，0为失败
@@ -414,20 +414,20 @@ void setup()   //上电初始化
   //   Serial.println("LittleFS 未能成功启动");
   // }
 
-    if(!LittleFS.begin())
-    {
-      Serial.println("An Error has occurred while mounting LittleFS");
-      return;
-    }
-      Serial.println("Littlefs is success open");
+    // if(!LittleFS.begin())
+    // {
+    //   Serial.println("An Error has occurred while mounting LittleFS");
+    //   return;
+    // }
+    //   Serial.println("Littlefs is success open");
 
-    // Dir dir = LittleFS.openDir(""); // 建立目录
-    //    while (dir.next())// dir.next()用于检查目录中是否还有"下一个文件"
-    //   {
-    //     String name = dir.fileName();
-    //     if (name.endsWith(".txt")) Serial.print(name);  
-    //     File f = dir.openFile(".txt");
-    //     Serial.println(f.size());
+    // // Dir dir = LittleFS.openDir(""); // 建立目录
+    // //    while (dir.next())// dir.next()用于检查目录中是否还有"下一个文件"
+    // //   {
+    // //     String name = dir.fileName();
+    // //     if (name.endsWith(".txt")) Serial.print(name);  
+    // //     File f = dir.openFile(".txt");
+    // //     Serial.println(f.size());
     //   }
 
   button_init();            // 按键初始化
@@ -903,7 +903,7 @@ void get_wifi(const char* SSID,const char* Password)     //连接 wifi
     delay(500);
     i++;
     Serial.print(".");
-    display_bottom_words("连接中...","connecting..");
+    display_bottom_words("连接中...","connecting..",65);
     if(i>=20)
     { 
       wifi_flag = 0;   //表示wifi连接失败
@@ -928,58 +928,14 @@ void get_wifi(const char* SSID,const char* Password)     //连接 wifi
 }
 
 
-void read_file_data()   //读取SD卡文件内容，保存与data3 字符串中
-{ total_page = 1;
-  unsigned char flag=0;
-  uint32_t i,total_xs=0;  //总像素
-  if(sdInitOk == 1)
-  { 
-    File myFile = SD.open(file_name);
-    if (myFile)  //如果打开了file
-    {  
-        SD_data = myFile.readString();
-        myFile.close();
-    }
-    else    //如果file没有打开
-    { Serial.println("error opening test.txt"); }
-  }
 
-  if(select_file==2){     //小说
-  for(i = 0; i < SD_data.length(); i++)
-    {
-      if (SD_data[i] & 0x80) {        //计算页数
-     	  	i+=2;
-        total_xs+=14;
-    	} 
-      else
-       {  test_data += SD_data[i];
-          const char *character = test_data.c_str();             //String转换char
-          uint16_t zf_width = u8g2Fonts.getUTF8Width(character) ;       //获取英文的 像素大小 
-          total_xs+=zf_width;
-          test_data.clear();
-        }         
-    }
-    total_page = (total_xs/1400)-1;
-    total_xs =0;
-
-}
-    if(select_file==1)    //单词
-    {
-      for(i = 0; i < SD_data.length(); i++)
-      {
-          if(SD_data[i]=='/')  { flag++; }  if(flag>=6) {flag=0;total_page++;}
-      }
-    }
-    Serial.print("总页数---------------");
-    Serial.println(total_page);
-}
 
 void read_filename()    //读取SD卡文件的名字，并且显示
 {
   boolean sw = 0;
 while( sw ==0 )
 {
-sw = 1;  //用于不输出TF卡自带的系统文件
+      sw = 1;  //用于不输出TF卡自带的系统文件
       sdBeginCheck();   //SD卡挂载检查
       display_partialLine(1, "文件列表");    //显示  “文件列表”
       uint8_t count = 2;
@@ -997,7 +953,8 @@ sw = 1;  //用于不输出TF卡自带的系统文件
         if(file_num_flag != 0)
         display_partialLine(count, xiaoxi);
         
-        count++;file_num_flag++;
+        count++;
+        file_num_flag++;
         entry.close();
       }
       // Serial.println("file_num_flag==");
@@ -1017,13 +974,13 @@ void show_type2(uint32_t now2_i)
         if (SD_data[i] & 0x80) 
         {
      	  	save_data += SD_data[i];save_data += SD_data[++i];save_data += SD_data[++i];
-
     	  } 
         else
         {
           if(SD_data[i] == '/')  { SD_data[i]=' ';x=300; }
           save_data += SD_data[i];  
         } 
+        
         //SD_data[i]        
         line_data += save_data;           //将每个字符拼接起来 组成一行的内容
         if( i==last_i )  //用于判断是英文还是中文，进而确定占的X像素大小，来确定是否换行
@@ -1053,42 +1010,7 @@ void show_type2(uint32_t now2_i)
 
 }
 
-void show_type1(uint32_t now1_i)     //逐行显示    （效果好，速度较快）  1为中文  0为单词
-{   uint8_t line_flag =0 ;
-    uint16_t x=5;  //用于记录X坐标
-    uint16_t zf_width;
-    uint32_t i,last_i;
-    for (i = now1_i; i < SD_data.length(); i++) 
-      { last_i = i;  
-        if (SD_data[i] & 0x80) {
-     	  		save_data += SD_data[i];save_data += SD_data[++i];save_data += SD_data[++i];
-    	  	} else {  
-          save_data += SD_data[i]; }         
-          line_data += save_data;           //将每个字符拼接起来 组成一行的内容
-          if( i==last_i )  //用于判断是英文还是中文，进而确定占的X像素大小，来确定是否换行
-          {
-            const char *character = save_data.c_str();             //String转换char
-            zf_width = u8g2Fonts.getUTF8Width(character) ;       //获取英文的 像素大小
-            x += zf_width;
-          } else {  x += 14;  }       
-          save_data.clear();            //save_data用完就清空，为下次准备
-          if(x >= 225 ||i == (SD_data.length()-1))  //该行读满了，就显示改行，没有读满就代表file读完了
-          { display_partialLine(line_flag , line_data);  //每保存完一行数据就显示
-            line_data.clear();
-            if(x >= 225)
-            {
-            line_flag++;
-            x = 5;Serial.println(1);    }
-            else { Serial.println(2);line_flag = 0;now_read1 =0; display_partialLine_BJZ(6,"(阅读完毕)",180, 4);break;}//退出，等待按键 }
-          }
-          if(line_flag >= 7)      //可以通过记录i的值来确定 阅读到哪里
-          { Serial.println(3);
-            line_flag = 0;
-            now_read1 = i+1;  //  记录当前阅读位置  重要  要+1
-            break; //退出，等待按键
-          }
-      }
-}
+
  
 void clear_ping()   //刷新整个屏幕
 {
@@ -1360,6 +1282,7 @@ void display_clock() //时钟显示界面
     }while (display.nextPage());
 }
 
+
 // 时钟动态UI
 void display_clock_dynamic_UI(void)
 {
@@ -1390,6 +1313,7 @@ void display_clock_dynamic_UI(void)
 
     }while (display.nextPage());
 }
+
 
 // 天气页面静态UI显示
 void display_main()
@@ -1827,8 +1751,36 @@ void display_pninter(uint8_t subindex)
       break;      
     }
 
-    default:
+    case 30:
+    {
+      x0 = 40; y = 15;
       break;
+    }
+    case 31:
+    {
+      x0 = 40; y = 35;
+      break;      
+    }
+    case 32:
+    {
+      x0 = 40; y = 55;
+      break;      
+    }
+    case 33:
+    {
+      x0 = 40; y = 75;
+      break;      
+    }
+    case 34:
+    {
+      x0 = 40; y = 95;
+      break;      
+    }
+    default:
+    {
+      y = 15;
+      break;
+    }
   }
   u8g2Fonts.setFont(chinese_gb2312);
   display.setPartialWindow((112 - x0), 0, 24, 96); //设置局部刷新窗口
@@ -2095,16 +2047,257 @@ void display_wifi_connect(uint8_t sub_index_wifi)
 }
 
 // 显示底部文字
-// GHN: 中文内容 ， ENG ：英文内容
-void display_bottom_words(String GHN,String ENG)
+// GHN: 中文内容 ， ENG ：英文内容 , x: 显示位置
+void display_bottom_words(String GHN,String ENG,uint16_t x)
 {
     u8g2Fonts.setFont(chinese_gb2312);
     display.firstPage();
     do
     {
       display.setPartialWindow(0, 104, 250, 24); //设置局部刷新窗口
-      u8g2Fonts.setCursor(65, 120);
+      u8g2Fonts.setCursor(x, 120);
       language_choose_display(GHN, ENG);
     } while (display.nextPage());
 
+}
+
+
+
+// 阅读模式静态UI 第一部分
+void display_read_static_1()
+{
+  // uint16_t y0 = 15;
+  // uint16_t y1 = y0 + 23;
+  // uint16_t y2 = y1 + 23;
+  // uint16_t x0 = 120;
+
+  display.setFullWindow(); //设置全部刷新窗口
+  u8g2Fonts.setFont(chinese_gb2312);
+  display.firstPage();
+  do
+  {
+    display.drawInvertedBitmap(10, 25, Bitmap_txtMain, 32, 32, heise); //发射站图标 图片
+
+    display.drawLine(60, 12, 60, 88, heise); //画垂直线
+    display.drawLine(0, 100, 250, 100, heise); // 水平线
+
+    u8g2Fonts.setCursor(50, 120);  //设置显示位置
+    language_choose_display("单击以选择,双击以进入..." , "Click to select, double-click to enter...");
+    //display.drawInvertedBitmap(5, 0, Bitmap_pwewm, 64, 64, heise); //二维码图标
+  }
+  while (display.nextPage());
+
+  
+}
+
+// 文件列表
+String file_list[100];      // 存储目录信息
+String file_list_name[100]; // 存储名字信息
+uint8_t file_last_read[100]; // 记录最后一次阅读的位置  
+
+// SD卡文件列表显示UI
+void display_SD_file_ui(void)
+{
+   file_num_flag = 0;
+   boolean sw = 0;
+  while (sw == 0)
+  {
+    sw = 1;                             //用于不输出TF卡自带的系统文件
+    sdBeginCheck();                     // SD卡挂载检查
+    //display_partialLine(1, "文件列表"); //显示  “文件列表”
+    uint8_t count = 1;
+    root = SD.open("/"); // 打开SD卡根目录
+
+    while (1)            //输出列表
+    {
+      File entry = root.openNextFile();   // 返回当前目录下的下一个文件或文件夹对象
+
+      if (!entry)  break; //没有更多文件了,跳出循环
+        
+      String fileName = entry.name(); //文件名
+      size_t fileSize = entry.size(); //文件大小
+      
+      //读取文件信息
+      file_list[file_num_flag] = String(count ) + ". " + fileName + "  " + String(fileSize) + "字节";
+      file_list_name[file_num_flag] =fileName;
+
+      Serial.println(file_list[file_num_flag]);
+      count++;
+      file_num_flag++;
+      entry.close();
+    }
+
+    /***************** ui 绘制 ******************/
+    Serial.println("file_num_flag==");
+    Serial.println(file_num_flag);
+  }
+}
+
+
+// 返回文件数的值
+uint8_t return_file_num_flag(void)
+{
+    return file_num_flag;
+}
+
+
+/**
+ * @brief      	SD卡动态UI，绘制文件列表
+ * @param[in]   file_num ： 文件编号
+ *              page_num :  页码编号
+ * @retval      none
+ * @attention
+ */
+void display_SD_file_dynamic_ui(uint8_t file_num,uint8_t page_num)
+{
+    u8g2Fonts.setFont(chinese_gb2312);
+    display.firstPage();
+  do{
+   display.setPartialWindow(100, 0, 180, 96); //设置局部刷新窗口
+   
+      for (int i = 0; i < 5; i++)
+      {
+
+        Serial.println(file_list[(page_num -1 ) *5+ i]);
+        u8g2Fonts.setCursor(100, 15 + i*20);
+      
+        u8g2Fonts.print(file_list[(page_num -1 ) *5+ i ]);
+      }
+    }while(display.nextPage());
+    
+}
+
+
+
+/**
+ * @brief      	内容阅读
+ * @param[in]   file_num ： 文件编号
+ *              page_num :  页码编号
+ * @retval      none
+ * @attention
+ */
+void display_SD_file_read(uint8_t file_num,uint8_t page_num)
+{
+
+}
+
+
+//读取SD卡文件内容，保存与data3 字符串中
+void read_file_data(String File_name)   
+{ total_page = 1;
+  unsigned char flag=0;
+  uint32_t i,total_xs=0;  //总像素
+  
+  if(sdInitOk == 1)     //SD卡挂载成功
+  { 
+    File myFile = SD.open(File_name);
+    if (myFile)  //如果打开了file
+    {  
+        SD_data = myFile.readString();
+        myFile.close();
+    }
+    else    //如果file没有打开
+    { Serial.println("error opening test.txt"); }
+  }
+
+
+  if(File_name == "word.txt" )  //单词
+  {
+      for(i = 0; i < SD_data.length(); i++)
+      {
+          if(SD_data[i]=='/')  { flag++; }  if(flag>=6) {flag=0;total_page++;}
+      }
+  }
+
+ else   //其他txt
+ {
+  
+  for(i = 0; i < SD_data.length(); i++)
+    {
+      if (SD_data[i] & 0x80) {        //计算页数
+     	  	i+=2;
+        total_xs+=14;
+    	} 
+      else
+       {  test_data += SD_data[i];
+          const char *character = test_data.c_str();             //String转换char
+          uint16_t zf_width = u8g2Fonts.getUTF8Width(character) ;       //获取英文的 像素大小 
+          total_xs+=zf_width;
+          test_data.clear();
+        }         
+    }
+    total_page = (total_xs/1400)-1;
+    total_xs =0;
+ } 
+    Serial.print("总页数---------------");
+    Serial.println(total_page);
+
+}
+
+/**
+ * @brief      	内容显示  //逐行显示    （效果好，速度较快）  
+ * @param[in]   now1_i ： 文件类型 1为中文  0为单词
+ *              file_deinx :  文件编号
+ *              page number ：当前页码
+ * @retval      none
+ * @attention
+ */
+void show_type1(uint32_t now1_i, uint8_t file_deinx)
+{
+  uint8_t line_flag = 0;
+  uint16_t x = 5; //用于记录X坐标
+  uint16_t zf_width;
+  uint32_t i, last_i;
+  for (i = now1_i; i < SD_data.length(); i++)
+  {
+    last_i = i;
+    if (SD_data[i] & 0x80)
+    {
+      save_data += SD_data[i];
+      save_data += SD_data[++i];
+      save_data += SD_data[++i];
+    }
+    else
+    {
+      save_data += SD_data[i];
+    }
+    line_data += save_data; //将每个字符拼接起来 组成一行的内容
+    if (i == last_i)        //用于判断是英文还是中文，进而确定占的X像素大小，来确定是否换行
+    {
+      const char *character = save_data.c_str();    // String转换char
+      zf_width = u8g2Fonts.getUTF8Width(character); //获取英文的 像素大小
+      x += zf_width;
+    }
+    else
+    {
+      x += 14;
+    }
+    save_data.clear();                           // save_data用完就清空，为下次准备
+    if (x >= 225 || i == (SD_data.length() - 1)) //该行读满了，就显示改行，没有读满就代表file读完了
+    {
+      display_partialLine(line_flag, line_data); //每保存完一行数据就显示
+      line_data.clear();
+      if (x >= 225)
+      {
+        line_flag++;
+        x = 5;
+        Serial.println(1);
+      }
+      else
+      {
+        Serial.println(2);
+        line_flag = 0;
+        file_last_read[file_deinx] = 0;     // 传入最后一次位置
+        display_partialLine_BJZ(6, "(阅读完毕)", 180, 4);
+        break;
+      } //退出，等待按键 }
+    }
+    if (line_flag >= 7) //可以通过记录i的值来确定 阅读到哪里
+    {
+      Serial.println(3);
+      line_flag = 0;
+      file_last_read[file_deinx] = i + 1; //  记录当前阅读位置  重要  要+1
+      break;             //退出，等待按键
+    }
+  }
 }
