@@ -27,6 +27,7 @@ void Menu_Main_Init(void)
 	sub_index.setting_current_index = 8;
 	sub_index.select_current_index = 1;
 	sub_index.language_current_index = 2;
+	sub_index.configuration_current_index = 20;
 	sub_index.Current_Page = MAIN_PAGE;
 
   display.fillScreen(baise);  // 填充屏幕
@@ -120,9 +121,9 @@ void main_page_ui_process(menu_u8 index)
 	if(ui_loging_flag == 0)		// 允许ui加载
 	{
 		//BW_refresh();          //黑白刷新一次
+		GetData();		
 		BW_refresh();          //黑白刷新一次
 		
-		GetData();
 		display_main_home("单击以进入菜单...","Click to enter the menu...");
 
 		ui_loging_flag = 1;
@@ -165,7 +166,7 @@ void clock_page_ui_process(void)
 	if(ui_loging_flag == 0)
 	{
 		Serial.println("clock status");
-	  Get_clock_data();
+	  GetData();
 	  BW_refresh();
 	  BW_refresh();
       display_clock();        // 时钟显示界面
@@ -189,6 +190,7 @@ void select_page_ui_process(void)
 
 	if(ui_loging_flag == 0)		// 允许ui加载
 	{
+	   Serial.println("select status");
 	  //BWClearScreen();   //黑一下刷新屏幕
       BWClearScreen();   //黑一下刷新屏幕
       display_main_select();

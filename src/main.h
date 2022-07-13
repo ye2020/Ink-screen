@@ -351,8 +351,12 @@ const unsigned char Bitmap_ACErig[]  PROGMEM = {0X00,0X01,0X29,0X00,0X55,0X00,
 0XFF,0X80,0XFF,0XFF,0XFF,0XFF,0XFF,0X80,0XFF,0XFF,0XFF,0XFF,0XFF,0X80,};
 
 extern const String language;  // 请求语言
-extern char *ssid     ;          //网络
-extern char *password ;
+
+extern  char *ssid     ;          //网络
+extern  char *password ;
+extern  const char *sta_ssid1     ;          //网络
+extern  const char *sta_password1 ;
+
 extern uint32_t RTC_get_data_count;  // 数据获取计数，隔一段时间才获取新数据
 
 extern Epd epd;
@@ -370,6 +374,8 @@ extern size_t overtime ;
 extern File fsUploadFile;           // 建立文件对象用于闪存文件上传
 extern ESP8266WebServer server; //建立网络服务器对象，该对象用于响应HTTP请求。监听端口（80）
 extern ESP8266HTTPUpdateServer httpUpdater; //建立httpOTA对象
+extern unsigned char wifi_flag; //wifi连接标志位  1为成功，0为失败
+
 
 
 struct ActualWeather
@@ -496,6 +502,9 @@ void display_clock_dynamic_UI(void);
 void display_peiwang(void);
 void peiwang_mod(void);
 void peiwang_mod_tesk(void);
+uint8_t return_wifi_num(void);
+void display_wifi_connect(uint8_t sub_index_wifi);
+void display_bottom_words(String GHN,String ENG);
 
 
 

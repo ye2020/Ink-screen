@@ -253,7 +253,6 @@ void main_page_process(button_status_e Key5Value, button_status_e Key0Value)
  */
 void select_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
-	Serial.println("select status");
 	select_page_ui_process();
 
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
@@ -290,7 +289,7 @@ void select_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	case KEY_home:
 	{
 		ui_loging_flag = 0;
-		Menu_Main_Init();
+		Enter_Page(MAIN_PAGE,button_none,button_none);
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
 	}
@@ -352,7 +351,7 @@ void setting_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	case KEY_home:
 	{
 		ui_loging_flag = 0;
-		Menu_Main_Init();
+		Enter_Page(MAIN_PAGE,button_none,button_none);
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
 	}
@@ -385,7 +384,7 @@ void weather_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	case KEY_home:
 	{
 		ui_loging_flag = 0;
-		Menu_Main_Init();
+		Enter_Page(MAIN_PAGE,button_none,button_none);
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
 	}
@@ -418,7 +417,7 @@ void clock_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	case KEY_home:
 	{
 		ui_loging_flag = 0;
-		Menu_Main_Init();
+		Enter_Page(MAIN_PAGE,button_none,button_none);
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
 	}
@@ -445,11 +444,42 @@ void configuration_page_process(button_status_e Key5Value, button_status_e Key0V
 	configuration_page_ui_process();
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
+	case KEY_dowm:
+	{
+		// 临界条件判断
+		(sub_index.configuration_current_index < (20 + return_wifi_num() - 1)) ? (sub_index.configuration_current_index++) : (sub_index.configuration_current_index = 20 );
+		display_pninter(sub_index.configuration_current_index);			// 指针显示
+		Serial.println("down to choose");
+		Serial.println(sub_index.configuration_current_index);
+		break;
+	}
 
+	case KEY_up:
+	{
+        // 临界条件判断
+		(sub_index.configuration_current_index > 20) ? (sub_index.configuration_current_index--) : (sub_index.configuration_current_index =  (20 + return_wifi_num() - 1))  ;
+		display_pninter(sub_index.configuration_current_index);			// 指针显示
+		Serial.println("up to choose");
+		Serial.println(sub_index.configuration_current_index);
+		break ;
+	}
+
+	case KEY_enter:
+	{
+		Serial.println("Enter the choice");
+		Serial.println((sub_index.configuration_current_index));
+
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
+		WiFi.disconnect(1);//断开网络
+		wifi_flag = 0;
+		display_wifi_connect(sub_index.configuration_current_index);  // wifi连接及ui绘制
+		Enter_Page(SELECT_PAGE,button_none,button_none);
+		break;
+	}
 	case KEY_home:
 	{
 		ui_loging_flag = 0;
-		Menu_Main_Init();
+		Enter_Page(MAIN_PAGE,button_none,button_none);
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
 	}
@@ -481,7 +511,7 @@ void read_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	case KEY_home:
 	{
 		ui_loging_flag = 0;
-		Menu_Main_Init();
+		Enter_Page(MAIN_PAGE,button_none,button_none);
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
 	}
@@ -513,7 +543,7 @@ void game_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	case KEY_home:
 	{
 		ui_loging_flag = 0;
-		Menu_Main_Init();
+		Enter_Page(MAIN_PAGE,button_none,button_none);
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
 	}
@@ -577,7 +607,7 @@ void language_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	case KEY_home:
 	{
 		ui_loging_flag = 0;
-		Menu_Main_Init();
+		Enter_Page(MAIN_PAGE,button_none,button_none);
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
 	}
@@ -610,7 +640,7 @@ void word_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	case KEY_home:
 	{
 		ui_loging_flag = 0;
-		Menu_Main_Init();
+		Enter_Page(MAIN_PAGE,button_none,button_none);
 	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
 		break;
 	}

@@ -115,7 +115,7 @@ void init_loop();    //原程序的 loop
 void show_type1(uint32_t now1_i);    //逐行显示    （效果好，速度较快）
 void show_type2(uint32_t now2_i);     //显示英文
 
-void get_wifi();
+void get_wifi(const char* SSID,const char* Password) ;    //连接 wifi
 
 
 void clear_ping();   //刷新整个屏幕
@@ -150,7 +150,7 @@ IPAddress dns2(114, 114, 115, 115);
 unsigned char file_num_flag = 0;
 unsigned char page_flag = 1 ;   //界面标志位   123 分别表示对应界面
 unsigned char loop_flag ;   //循环显示标志位 
-unsigned char wifi_flag = 1 ; //wifi连接标志位  1为成功，0为失败
+unsigned char wifi_flag = 0 ; //wifi连接标志位  1为成功，0为失败
 unsigned char get_wifi_flag = 1;  // 
 unsigned char key5_flag = 0,key0_flag = 1;  //按键标志位  key0=1默认选择第一个文件夹
 String select1="1";
@@ -170,9 +170,11 @@ char net_time[] = {'0', '0', '0', '0', '-', '0','0','-','0','0',' ','0', '0', ':
 
 
 /********** STA设置***********/
-char *ssid    = "00_mi";//"8B110_2.4G";          //网络
-char *password = "yezhaotin";//"DGUT8B110";
+const char *sta_ssid1    = "00_mi";//"8B110_2.4G";          //网络
+const char *sta_password1 = "yezhaotin";//"DGUT8B110";
 
+char *ssid    = "00_mi";
+char *password = "yezhaotin";
 /********** AP设置***********/
 const char *ap_ssid = "ESP_Y.Z.T";
 const char *ap_password = "333333333"; //无密码则为开放式网络 9个3
@@ -399,7 +401,7 @@ void setup()   //上电初始化
   auto_eeprom();
   //GetData();
   display_main_home("wifi连接中....","wifi connecting....");
-  get_wifi();               // 只能连接2.4G频段
+  get_wifi(sta_ssid1,sta_password1);               // 只能连接2.4G频段
 
   
   //****** 文件系统初始化 ******
@@ -647,31 +649,34 @@ void GetData()
 
   
    uint8_t update_count = 0;
-  while (timeClient.update() == 0 && update_count < 6)
+   if(wifi_flag == 1)    // 已连接wifi
   {
-    Serial.print("NTP超时计数:"); Serial.println(update_count);
-    delay(100);
-    if (update_count == 2) timeClient.setPoolServerName("s2k.time.edu.cn");
-    else if (update_count == 3) timeClient.setPoolServerName("1d.time.edu.cn");
-    else if (update_count == 4) timeClient.setPoolServerName("s1c.time.edu.cn");
-    else if (update_count == 5) timeClient.setPoolServerName("ntp.sjtu.edu.cn");
-        update_count++;
-  }
+    while (timeClient.update() == 0 && update_count < 6)
+    {
+      Serial.print("NTP超时计数:"); Serial.println(update_count);
+      delay(100);
+      if (update_count == 2) timeClient.setPoolServerName("s2k.time.edu.cn");
+      else if (update_count == 3) timeClient.setPoolServerName("1d.time.edu.cn");
+      else if (update_count == 4) timeClient.setPoolServerName("s1c.time.edu.cn");
+      else if (update_count == 5) timeClient.setPoolServerName("ntp.sjtu.edu.cn");
+          update_count++;
+    }
 
-  if (update_count < 6 )
-  {
-   
-    RTC_hour = timeClient.getHours();
-    RTC_minute = timeClient.getMinutes();
-    RTC_seconds = timeClient.getSeconds();
-    time_start_ms = millis();
-    ESP.rtcUserMemoryWrite(RTC_hour, &RTC_hour, sizeof(RTC_hour));
-    ESP.rtcUserMemoryWrite(RTC_minute, &RTC_minute, sizeof(RTC_minute));
-   ESP.rtcUserMemoryWrite(RTC_seconds, &RTC_seconds, sizeof(RTC_seconds));
-    //Serial.println(timeClient.getFormattedTime());
-    Serial.print("get the time :"); Serial.println(RTC_hour);   // 获取时间
-    timeClient.end();
-    // display_partialLine(7, "NTP，OK!");
+    if (update_count < 6 )
+    {
+    
+      RTC_hour = timeClient.getHours();
+      RTC_minute = timeClient.getMinutes();
+      RTC_seconds = timeClient.getSeconds();
+      time_start_ms = millis();
+      ESP.rtcUserMemoryWrite(RTC_hour, &RTC_hour, sizeof(RTC_hour));
+      ESP.rtcUserMemoryWrite(RTC_minute, &RTC_minute, sizeof(RTC_minute));
+    ESP.rtcUserMemoryWrite(RTC_seconds, &RTC_seconds, sizeof(RTC_seconds));
+      //Serial.println(timeClient.getFormattedTime());
+      Serial.print("get the time :"); Serial.println(RTC_hour);   // 获取时间
+      timeClient.end();
+      // display_partialLine(7, "NTP，OK!");
+    }
   }
   else
   {
@@ -689,32 +694,36 @@ void GetData()
 void Get_clock_data()
 {
      uint8_t update_count = 0;
-  while (timeClient.update() == 0 && update_count < 6)
+  if(wifi_flag == 1)    // 已连接wifi
   {
-    Serial.print("NTP超时计数:"); Serial.println(update_count);
-    delay(100);
-    if (update_count == 2) timeClient.setPoolServerName("s2k.time.edu.cn");
-    else if (update_count == 3) timeClient.setPoolServerName("1d.time.edu.cn");
-    else if (update_count == 4) timeClient.setPoolServerName("s1c.time.edu.cn");
-    else if (update_count == 5) timeClient.setPoolServerName("ntp.sjtu.edu.cn");
-        update_count++;
+    while (timeClient.update() == 0 && update_count < 6)
+    {
+      Serial.print("NTP超时计数:"); Serial.println(update_count);
+      delay(100);
+      if (update_count == 2) timeClient.setPoolServerName("s2k.time.edu.cn");
+      else if (update_count == 3) timeClient.setPoolServerName("1d.time.edu.cn");
+      else if (update_count == 4) timeClient.setPoolServerName("s1c.time.edu.cn");
+      else if (update_count == 5) timeClient.setPoolServerName("ntp.sjtu.edu.cn");
+          update_count++;
+    }
+
+    if (update_count < 6 )
+    {
+    
+      RTC_hour = timeClient.getHours();
+      RTC_minute = timeClient.getMinutes();
+      RTC_seconds = timeClient.getSeconds();
+      time_start_ms = millis();
+      ESP.rtcUserMemoryWrite(RTC_hour, &RTC_hour, sizeof(RTC_hour));
+      ESP.rtcUserMemoryWrite(RTC_minute, &RTC_minute, sizeof(RTC_minute));
+      ESP.rtcUserMemoryWrite(RTC_seconds, &RTC_seconds, sizeof(RTC_seconds));
+      //Serial.println(timeClient.getFormattedTime());
+      Serial.print("get the time :"); Serial.println(RTC_hour);   // 获取时间
+      timeClient.end();
+      // display_partialLine(7, "NTP，OK!");
+    }
   }
 
-  if (update_count < 6 )
-  {
-   
-    RTC_hour = timeClient.getHours();
-    RTC_minute = timeClient.getMinutes();
-    RTC_seconds = timeClient.getSeconds();
-    time_start_ms = millis();
-    ESP.rtcUserMemoryWrite(RTC_hour, &RTC_hour, sizeof(RTC_hour));
-    ESP.rtcUserMemoryWrite(RTC_minute, &RTC_minute, sizeof(RTC_minute));
-    ESP.rtcUserMemoryWrite(RTC_seconds, &RTC_seconds, sizeof(RTC_seconds));
-    //Serial.println(timeClient.getFormattedTime());
-    Serial.print("get the time :"); Serial.println(RTC_hour);   // 获取时间
-    timeClient.end();
-    // display_partialLine(7, "NTP，OK!");
-  }
   else
   {
     String a; String b;
@@ -883,16 +892,21 @@ void display_clock() //时钟显示界面
 //       display_partialLine(1,net_time);  //在第一行显示时间
 // }
 
-void get_wifi()     //连接 wifi
-{ uint8_t i = 0;  //用来判断半分钟内是否联网成功 , 否则提示
+void get_wifi(const char* SSID,const char* Password)     //连接 wifi
+{ 
+  uint8_t i = 0;  //用来判断半分钟内是否联网成功 , 否则提示
   WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {   //检测 wifi 连接状态
+  WiFi.begin(SSID, Password);
+
+  while (WiFi.status() != WL_CONNECTED) 
+  {   //检测 wifi 连接状态
     delay(500);
     i++;
     Serial.print(".");
+    display_bottom_words("连接中...","connecting..");
     if(i>=20)
-    { wifi_flag = 0;   //表示wifi连接失败
+    { 
+      wifi_flag = 0;   //表示wifi连接失败
       Serial.println("Failed to connect wifi within 5s ");    // 5s内未成功连接wifi （编码显示问题 用串口输出的话 utf-8 会乱码 ，改GBK的话 显示器乱码 + 注释乱码）
       Serial.println("Press key5 to enter reading mode");   // 按下key5键，进入阅读模式
       // display_partialLine(1,"5s内未成功连接wifi");
@@ -901,13 +915,13 @@ void get_wifi()     //连接 wifi
     }
   }
 
-  if( wifi_flag == 1 ) {   //表示wifi连接成功
-  // display_partialLine(1,"wifi连接成功");
-  // display_partialLine(3,"获取时间和天气中...");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  http.setTimeout(5000);
+  if( WiFi.status()  == WL_CONNECTED ) //表示wifi连接成功
+  {   
+    wifi_flag = 1;
+    Serial.println("WiFi connected");
+    Serial.println("IP address: ");
+    Serial.println(WiFi.localIP());
+    http.setTimeout(5000);
 
   }
 
@@ -982,6 +996,7 @@ sw = 1;  //用于不输出TF卡自带的系统文件
         String xiaoxi = String(count - 2) + ". " + fileName + "  " + String(fileSize) + "字节";
         if(file_num_flag != 0)
         display_partialLine(count, xiaoxi);
+        
         count++;file_num_flag++;
         entry.close();
       }
@@ -1746,6 +1761,7 @@ void display_main_select(void)
 void display_pninter(uint8_t subindex)
 {
   int y = 15 ;
+  int x0 = 0;     // 刷新窗口偏移值
   
  // FixedRefresh(); //屏幕初始化及定次刷新
   switch (subindex)
@@ -1785,15 +1801,41 @@ void display_pninter(uint8_t subindex)
       y = 55;
       break;
     }
+    case 20:
+    {
+      x0 = 40; y = 15;
+      break;
+    }
+    case 21:
+    {
+      x0 = 40; y = 35;
+      break;      
+    }
+    case 22:
+    {
+      x0 = 40; y = 55;
+      break;      
+    }
+    case 23:
+    {
+      x0 = 40; y = 75;
+      break;      
+    }
+    case 24:
+    {
+      x0 = 40; y = 95;
+      break;      
+    }
+
     default:
       break;
   }
   u8g2Fonts.setFont(chinese_gb2312);
-  display.setPartialWindow(112, 0, 24, 96); //设置局部刷新窗口
+  display.setPartialWindow((112 - x0), 0, 24, 96); //设置局部刷新窗口
   display.firstPage();
 
   do{
-      display.drawCircle(120, y - 5 ,4,0);     // 画圈
+      display.drawCircle((120 - x0), (y - 5) ,4,0);     // 画圈
   }while(display.nextPage());
 
 }
@@ -1903,13 +1945,13 @@ else if(language_choose_flag == 1)  // 显示英文
 }
 
 
-// 配网模式今天UI
+// 配网模式静态UI
 void display_peiwang()
 {
-  uint16_t y0 = 15;
-  uint16_t y1 = y0 + 23;
-  uint16_t y2 = y1 + 23;
-  uint16_t x0 = 120;
+  // uint16_t y0 = 15;
+  // uint16_t y1 = y0 + 23;
+  // uint16_t y2 = y1 + 23;
+  // uint16_t x0 = 120;
 
   display.setFullWindow(); //设置局部刷新窗口
   u8g2Fonts.setFont(chinese_gb2312);
@@ -1930,15 +1972,17 @@ void display_peiwang()
   
 }
 
-// 配置页面动态UI
+static uint8_t wifi_num = 0;        //附近wifi 数量
+// 配置页面静态UI部分2
 void peiwang_mod_tesk(void)
 {
   int n; //返回异步扫描找到的个数
-  uint8_t  wifi_num = 0;        //附近wifi 数量
+  
   uint16_t y0 = 15;
   uint16_t x0 = 100;
    String wifi_data;
 
+  WiFi.scanDelete(); //从内存中删掉最近扫描结果  //注意：如果不删除，将会叠加上次扫描的结果；
   WiFi.scanNetworks(true);     //异步扫描
   delay(5000);                 //扫描需要一段时间，所以等待一会儿
 
@@ -1964,7 +2008,6 @@ void peiwang_mod_tesk(void)
       wifi_data = WiFi.SSID(i) + "(" + WiFi.RSSI(i) + "dBm)" +  "(" +(WiFi.encryptionType(i) == ENC_TYPE_NONE ? "open" : "") + ")";
       u8g2Fonts.print(wifi_data);
     }
-    WiFi.scanDelete(); //从内存中删掉最近扫描结果  //注意：如果不删除，将会叠加上次扫描的结果；
   }
   else
   {
@@ -1982,5 +2025,86 @@ void peiwang_mod_tesk(void)
     u8g2Fonts.setCursor(5,120);
     language_choose_display("将网络密码设置为yezhaotin以连接...","将2.4G网络密码设置为“yezhaotin”以连接...");
     }while(display.nextPage());
+
+}
+
+// 返回附近wifi的数量
+uint8_t return_wifi_num(void)
+{
+    return wifi_num;
+}
+
+// 连接页面相关处理及UI
+void display_wifi_connect(uint8_t sub_index_wifi)
+{
+  int i = 0;
+  i = sub_index_wifi % 20; // sub为（20~24）
+
+  Serial.println(WiFi.SSID(i));
+  get_wifi(WiFi.SSID(i).c_str(), sta_password1); // 选择wifi以连接
+
+  if (wifi_flag == 1) // 连接成功
+  {
+    /* ******** ui 绘制*********/
+    u8g2Fonts.setFont(chinese_gb2312);
+    display.firstPage();
+    do
+    {
+      display.setPartialWindow(100, 0, 180, 96); //设置局部刷新窗口
+      u8g2Fonts.setCursor(120, 50);
+      language_choose_display("已成功连接到：", "Successfully connected to: ");
+      u8g2Fonts.setCursor(120, 70);
+      u8g2Fonts.print(WiFi.SSID(i));
+    } while (display.nextPage());
+
+    display.firstPage();
+    do
+    {
+      display.setPartialWindow(0, 104, 250, 24); //设置局部刷新窗口
+      u8g2Fonts.setCursor(65, 120);
+      language_choose_display("连接成功...", "The connection is successful...");
+    } while (display.nextPage());
+
+    delay(3000);    // 显示一段时间
+  }
+
+  else if (wifi_flag == 0)
+  {
+    /* ******** ui 绘制*********/
+    u8g2Fonts.setFont(chinese_gb2312);
+    display.firstPage();
+    do
+    {
+      display.setPartialWindow(100, 0, 180, 96); //设置局部刷新窗口
+      u8g2Fonts.setCursor(120, 50);
+      language_choose_display("连接失败：", "Failed to connect to: ");
+      u8g2Fonts.setCursor(120, 70);
+      u8g2Fonts.print(WiFi.SSID(i));
+    } while (display.nextPage());
+
+    display.firstPage();
+    do
+    {
+      display.setPartialWindow(0, 104, 250, 24); //设置局部刷新窗口
+      u8g2Fonts.setCursor(65, 120);
+      language_choose_display("连接失败...", "The connection fails...");
+    } while (display.nextPage());
+
+    delay(3000);    // 显示一段时间
+  }
+}
+
+// 显示底部文字
+// GHN: 中文内容 ， ENG ：英文内容
+void display_bottom_words(String GHN,String ENG)
+{
+    u8g2Fonts.setFont(chinese_gb2312);
+    display.firstPage();
+    do
+    {
+      display.setPartialWindow(0, 104, 250, 24); //设置局部刷新窗口
+      u8g2Fonts.setCursor(65, 120);
+      language_choose_display(GHN, ENG);
+    } while (display.nextPage());
 
 }
