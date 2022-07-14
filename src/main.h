@@ -520,6 +520,7 @@ void display_SD_file_dynamic_ui(uint8_t file_num,uint8_t page_num);
 void display_SD_file_read(uint8_t file_num,uint8_t page_num);
 void read_file_data(String File_name);   //读取SD卡文件内容，保存与data3 字符串中
 void show_type1(uint32_t now1_i, uint8_t file_deinx);
+void show_type2(uint32_t now1_i, uint8_t file_deinx);
 
 
 

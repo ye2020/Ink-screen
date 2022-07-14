@@ -276,7 +276,12 @@ void read_page_ui_process(void)
 void book_page_ui_process(void)
 {	
 	if(ui_loging_flag == 0)		// 允许ui加载
-	{
+	{		
+			Serial.println("book status"); 
+
+		if(file_list_name[return_flie_current_num()] == "word.txt")		//单词本独立格式显示
+		show_type2(file_last_read[return_flie_current_num()][1] ,return_flie_current_num());
+		else
 		show_type1(file_last_read[return_flie_current_num()][1],return_flie_current_num());
 		ui_loging_flag = 1;
 	}

@@ -963,55 +963,6 @@ while( sw ==0 )
 }
 }
 
-void show_type2(uint32_t now2_i)
- {  int line_flag =0 ,flag1=0,flag2=0,flag3=0;    //在哪行显示的标志
-    uint16_t x=5;  //用于记录X坐标
-    uint16_t zf_width;  //记录字符占的像素
-    uint32_t i,last_i;
-    unsigned char space_flag = 0;
-    for (i = now2_i; i < SD_data.length(); i++) 
-      { last_i = i; 
-        if (SD_data[i] & 0x80) 
-        {
-     	  	save_data += SD_data[i];save_data += SD_data[++i];save_data += SD_data[++i];
-    	  } 
-        else
-        {
-          if(SD_data[i] == '/')  { SD_data[i]=' ';x=300; }
-          save_data += SD_data[i];  
-        } 
-        
-        //SD_data[i]        
-        line_data += save_data;           //将每个字符拼接起来 组成一行的内容
-        if( i==last_i )  //用于判断是英文还是中文，进而确定占的X像素大小，来确定是否换行
-          { const char *character = save_data.c_str();             //String转换char
-            zf_width = u8g2Fonts.getUTF8Width(character) ;       //获取英文的 像素大小
-            x += zf_width;
-          } else {  x += 14;  }   
-          save_data.clear();            //save_data用完就清空，为下次准备  
-          
-        if(x >= 225 ||i == (SD_data.length()-1))  //该行读满了，就显示改行，没有读满就代表file读完了
-          { display_partialLine_2(line_flag , line_data);  //每保存完一行数据就显示
-            line_data.clear();
-            if(x >= 225)
-            {
-            line_flag++;
-            x = 5;Serial.println(1);    }
-            else { Serial.println(2);line_flag = 0;now_read2 =0; display_partialLine_BJZ(6,"(阅读完毕)",180, 4);break;}//退出，等待按键 }
-          }  
-        if(line_flag >= 7)      //可以通过记录i的值来确定 阅读到哪里
-          { Serial.println(3);
-            line_flag = 0;
-            now_read2 = i+1;  //  记录当前阅读位置  重要  要+1
-            break; //退出，等待按键
-          }
-          
-      }
-
-}
-
-
- 
 void clear_ping()   //刷新整个屏幕
 {
   display_partialLine(0," ");
@@ -2307,3 +2258,81 @@ void show_type1(uint32_t now1_i, uint8_t file_deinx)
     }
   }
 }
+
+// 单词本显示
+void show_type2(uint32_t now1_i, uint8_t file_deinx)
+{
+  int line_flag = 0, flag1 = 0, flag2 = 0, flag3 = 0; //在哪行显示的标志
+  uint16_t x = 5;                                     //用于记录X坐标
+  uint16_t zf_width;                                  //记录字符占的像素
+  uint32_t i, last_i;
+  unsigned char space_flag = 0;
+
+  file_last_read[file_deinx][0] = file_last_read[file_deinx][1]; //上一页的开始值
+  file_last_read[file_deinx][1] = now1_i;                        //这一页的开始值
+    BWClearScreen();    //黑一下清屏
+
+  for (i = now1_i; i < SD_data.length(); i++)
+  {
+    last_i = i;
+    if (SD_data[i] & 0x80)
+    {
+      save_data += SD_data[i];
+      save_data += SD_data[++i];
+      save_data += SD_data[++i];
+    }
+    else
+    {
+      if (SD_data[i] == '/')
+      {
+        SD_data[i] = ' ';
+        x = 300;
+      }
+      save_data += SD_data[i];
+    }
+
+    // SD_data[i]
+    line_data += save_data; //将每个字符拼接起来 组成一行的内容
+    if (i == last_i)        //用于判断是英文还是中文，进而确定占的X像素大小，来确定是否换行
+    {
+      const char *character = save_data.c_str();    // String转换char
+      zf_width = u8g2Fonts.getUTF8Width(character); //获取英文的 像素大小
+      x += zf_width;
+    }
+    else
+    {
+      x += 14;
+    }
+    save_data.clear(); // save_data用完就清空，为下次准备
+
+    if (x >= 225 || i == (SD_data.length() - 1)) //该行读满了，就显示改行，没有读满就代表file读完了
+    {
+      display_partialLine_2(line_flag, line_data); //每保存完一行数据就显示
+      line_data.clear();
+      if (x >= 225)
+      {
+        line_flag++;
+        x = 5;
+        Serial.println(1);
+      }
+      else
+      {
+        Serial.println(2);
+        line_flag = 0;
+        file_last_read[file_deinx][2] = 0;     // 传入最后一次位置
+        display_partialLine_BJZ(6, "(阅读完毕)", 180, 4);
+        break;
+      } //退出，等待按键 }
+    }
+    if (line_flag >= 7) //可以通过记录i的值来确定 阅读到哪里
+    {
+      Serial.println(3);
+      line_flag = 0;
+      file_last_read[file_deinx][2] = i + 1;//  记录当前阅读位置  重要  要+1
+      break;             //退出，等待按键
+    }
+  }
+}
+
+
+ 

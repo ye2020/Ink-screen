@@ -747,7 +747,6 @@ void word_page_process(button_status_e Key5Value, button_status_e Key0Value)
 static uint16_t book_page_current_index = 0;		//
 void book_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {	
-	Serial.println("book status"); 
 	book_page_ui_process();
 	
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
@@ -755,10 +754,11 @@ void book_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_dowm:
 	{
-		// 临界条件判断
-		// (sub_index.configuration_current_index < (20 + return_wifi_num() - 1)) ? (sub_index.configuration_current_index++) : (sub_index.configuration_current_index = 20 );
-		// display_pninter(sub_index.configuration_current_index);			// 指针显示
+		if(file_list_name[flie_current_num] == "word.txt")		//单词本独立格式显示
+		show_type2(file_last_read[flie_current_num][2] ,flie_current_num);
+		else
 		show_type1(file_last_read[flie_current_num][2] ,flie_current_num);
+
 		Serial.println("down to choose");
 		Serial.println(sub_index.configuration_current_index);
 		break;
@@ -766,7 +766,9 @@ void book_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_up:
 	{
-
+		if(file_list_name[flie_current_num] == "word.txt")		//单词本独立格式显示
+		show_type2(file_last_read[flie_current_num][0] ,flie_current_num);
+		else
 		show_type1(file_last_read[flie_current_num][0]  ,flie_current_num);
 		Serial.println("up to choose");
 		Serial.println(sub_index.configuration_current_index);
