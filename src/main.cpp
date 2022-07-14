@@ -2093,7 +2093,7 @@ void display_read_static_1()
 // 文件列表
 String file_list[100];      // 存储目录信息
 String file_list_name[100]; // 存储名字信息
-uint8_t file_last_read[100]; // 记录最后一次阅读的位置  
+uint32_t file_last_read[100][3] = {0}; // 记录最后一次阅读的位置  ,分别是上页的初始i，这次的初始i，这次的结束i + 1(即下页的开始值)
 
 // SD卡文件列表显示UI
 void display_SD_file_ui(void)
@@ -2207,6 +2207,7 @@ void read_file_data(String File_name)
       {
           if(SD_data[i]=='/')  { flag++; }  if(flag>=6) {flag=0;total_page++;}
       }
+    
   }
 
  else   //其他txt
@@ -2236,9 +2237,8 @@ void read_file_data(String File_name)
 
 /**
  * @brief      	内容显示  //逐行显示    （效果好，速度较快）  
- * @param[in]   now1_i ： 文件类型 1为中文  0为单词
+ * @param[in]   now1_i ： 开始阅读的位置，传入储存该数据的数组
  *              file_deinx :  文件编号
- *              page number ：当前页码
  * @retval      none
  * @attention
  */
@@ -2248,6 +2248,11 @@ void show_type1(uint32_t now1_i, uint8_t file_deinx)
   uint16_t x = 5; //用于记录X坐标
   uint16_t zf_width;
   uint32_t i, last_i;
+
+  file_last_read[file_deinx][0]= file_last_read[file_deinx][1];  //上一页的开始值
+  file_last_read[file_deinx][1] = now1_i;   //这一页的开始值
+    BWClearScreen();    //黑一下清屏
+
   for (i = now1_i; i < SD_data.length(); i++)
   {
     last_i = i;
@@ -2283,11 +2288,11 @@ void show_type1(uint32_t now1_i, uint8_t file_deinx)
         x = 5;
         Serial.println(1);
       }
-      else
+      else  // 阅读完毕清零
       {
         Serial.println(2);
         line_flag = 0;
-        file_last_read[file_deinx] = 0;     // 传入最后一次位置
+        file_last_read[file_deinx][2] = 0;     // 传入最后一次位置
         display_partialLine_BJZ(6, "(阅读完毕)", 180, 4);
         break;
       } //退出，等待按键 }
@@ -2296,7 +2301,8 @@ void show_type1(uint32_t now1_i, uint8_t file_deinx)
     {
       Serial.println(3);
       line_flag = 0;
-      file_last_read[file_deinx] = i + 1; //  记录当前阅读位置  重要  要+1
+    //  file_last_read[file_deinx] = i + 1; //  记录当前阅读位置  重要  要+1
+      file_last_read[file_deinx][2] = i + 1;  //更新数值(当前这一页的结束值，即下一页的开始值)
       break;             //退出，等待按键
     }
   }

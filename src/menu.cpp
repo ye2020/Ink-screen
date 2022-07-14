@@ -36,6 +36,8 @@
 
 // 定义菜单索引变量
 Key_Index sub_index;
+uint8_t  page_current_sta = 1;		//当前页码
+static uint8_t flie_current_num = 0;		// 当前书籍编号
 
 static key_value_e Key5Value_transition_function(button_status_e button5, button_status_e button0);
 void Menu_Select_Item(menu_i32 current_index, button_status_e Key5Value, button_status_e Key0Value);
@@ -54,7 +56,8 @@ static OP_MENU_PAGE g_opStruct[] =
 		{SETTING_PAGE, setting_page_process},
 		{SELECT_PAGE, select_page_process},
 		{LANGUAGE_PAGE, language_page_process},
-		{WORD_PAGE, word_page_process}	
+		{WORD_PAGE, word_page_process},
+		{BOOK_PAGE, book_page_process}
 	};
 
 
@@ -85,6 +88,17 @@ void Menu_Select_Item(menu_i32 current_index, button_status_e Key5Value, button_
 void Menu_Select_main(button_status_e Key5Value, button_status_e Key0Value)
 {
 	Enter_Page(sub_index.Current_Page, Key5Value, Key0Value);
+}
+
+/**
+ * @brief		返回当前阅读的书籍编号
+ * @param[in]   none
+ * @retval      none
+ * @attention
+ */
+uint8_t return_flie_current_num(void)
+{
+	return flie_current_num;
 }
 
 /**
@@ -501,27 +515,40 @@ void configuration_page_process(button_status_e Key5Value, button_status_e Key0V
  * @retval      none
  * @attention
  */
-uint8_t  page_current_sta = 1;		//当前页码
-
 void read_page_process(button_status_e Key5Value, button_status_e Key0Value)
 {
 	uint8_t  page_num = ((return_file_num_flag() / 5 ) + 1);	//总页码数
-
+	flie_current_num = (sub_index.read_current_index % 5 + (page_current_sta - 1 )*5);	// 书籍当前编号
+	
 	read_page_ui_process();
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
 	case KEY_dowm:
 	{
-		// 临界条件判断
-		if(sub_index.read_current_index <  (34) )
-		(sub_index.read_current_index++) ;
-		else
+		// 懒得优化，就这么写了，有点憨憨
+		if(page_current_sta != page_num)
 		{
-		(sub_index.read_current_index = 30 ); 
-		page_current_sta++;
+		// 临界条件判断
+			if(sub_index.read_current_index <  (34) )
+			(sub_index.read_current_index++) ;
+			else
+			{
+			(sub_index.read_current_index = 30 ); 
+			page_current_sta++;
+			}
 		}
-
+		else 	// 在最后一页，指针索引最大值改变
+		{
+			if(sub_index.read_current_index <  (30 + (return_file_num_flag() % 5)-1 ) )
+			(sub_index.read_current_index++) ;
+			else
+			{
+			(sub_index.read_current_index = 30 ); 
+			page_current_sta++;
+			}
+		}
 		if(page_current_sta >  page_num) page_current_sta = 1;  // 重返第一页
+
 
 		Serial.printf("page=%d",page_current_sta);
 		display_SD_file_dynamic_ui((sub_index.read_current_index % 30 ),page_current_sta);
@@ -533,14 +560,14 @@ void read_page_process(button_status_e Key5Value, button_status_e Key0Value)
 
 	case KEY_up:
 	{
-        // 临界条件判断
-		if(sub_index.read_current_index > 30)
-		(sub_index.read_current_index--) ;
-		else
-		{
-		(sub_index.read_current_index =  (34 ) );
-		 page_current_sta--;
-		}
+			// 临界条件判断
+			if(sub_index.read_current_index > 30)
+			(sub_index.read_current_index--) ;
+			else
+			{
+			(sub_index.read_current_index =  (34 ) );
+			page_current_sta--;
+			}
 
 		if(page_current_sta <  1) page_current_sta = page_num;  // 重返最后一页
 
@@ -558,8 +585,10 @@ void read_page_process(button_status_e Key5Value, button_status_e Key0Value)
 		Serial.println((sub_index.read_current_index));
 
 		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
-		
-		Enter_Page(SELECT_PAGE,button_none,button_none);
+	
+		// 加载当前书籍数据进入data （书籍编号 = 当前页面索引 + 当前页面数*5）
+		read_file_data(file_list_name[flie_current_num]);
+		Enter_Page(BOOK_PAGE,button_none,button_none);
 		break;
 	}
 	case KEY_home:
@@ -690,7 +719,6 @@ void word_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	word_page_ui_process();
 	switch (Key5Value_transition_function(Key5Value, Key0Value))
 	{
-
 	case KEY_home:
 	{
 		ui_loging_flag = 0;
@@ -710,4 +738,57 @@ void word_page_process(button_status_e Key5Value, button_status_e Key0Value)
 	}
 }
 
+/**
+ * @brief       字号页面处理
+ * @param[in]   KeyValue ： 键值
+ * @retval      none
+ * @attention
+ */
+static uint16_t book_page_current_index = 0;		//
+void book_page_process(button_status_e Key5Value, button_status_e Key0Value)
+{	
+	Serial.println("book status"); 
+	book_page_ui_process();
+	
+	switch (Key5Value_transition_function(Key5Value, Key0Value))
+	{
+
+	case KEY_dowm:
+	{
+		// 临界条件判断
+		// (sub_index.configuration_current_index < (20 + return_wifi_num() - 1)) ? (sub_index.configuration_current_index++) : (sub_index.configuration_current_index = 20 );
+		// display_pninter(sub_index.configuration_current_index);			// 指针显示
+		show_type1(file_last_read[flie_current_num][2] ,flie_current_num);
+		Serial.println("down to choose");
+		Serial.println(sub_index.configuration_current_index);
+		break;
+	}
+
+	case KEY_up:
+	{
+
+		show_type1(file_last_read[flie_current_num][0]  ,flie_current_num);
+		Serial.println("up to choose");
+		Serial.println(sub_index.configuration_current_index);
+		break ;
+	}		
+	case KEY_home:
+	{
+		ui_loging_flag = 0;
+		Enter_Page(MAIN_PAGE,button_none,button_none);
+	//	Enter_Page(sub_index.setting_current_index, Key5Value, Key0Value);
+		break;
+	}
+
+	case KEY_esc:
+	{	//返回上一页
+		ui_loging_flag = 0;     // 当按键按下时，将ui加载标志位置0，表示允许加载ui
+		Enter_Page(READ_PAGE,button_none,button_none);
+		break;
+	}
+	default:
+		break;
+	}
+
+}
 

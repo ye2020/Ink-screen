@@ -109,6 +109,11 @@ void Enter_Page(menu_i32 index, button_status_e Key5Value , button_status_e Key0
 		break;
 	}
 
+	case BOOK_PAGE:
+	{
+		Menu_Select_Item(BOOK_PAGE,  Key5Value, Key0Value);
+		break;
+	}
 	// 否则返回主页面
 	default:
 	{	Menu_Select_Item(MAIN_PAGE, Key5Value,Key0Value);
@@ -264,6 +269,15 @@ void read_page_ui_process(void)
 		display_read_static_1();		//静态UI第一部分
 		display_SD_file_ui();			// 读取SD卡内容
 		//read_filename();
+		ui_loging_flag = 1;
+	}
+}
+
+void book_page_ui_process(void)
+{	
+	if(ui_loging_flag == 0)		// 允许ui加载
+	{
+		show_type1(file_last_read[return_flie_current_num()][1],return_flie_current_num());
 		ui_loging_flag = 1;
 	}
 }

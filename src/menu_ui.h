@@ -31,5 +31,6 @@ void language_page_ui_process(void);
 void word_page_ui_process(void);
 void configuration_page_ui_process(void);
 void read_page_ui_process(void);
+void book_page_ui_process(void);
 
 #endif

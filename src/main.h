@@ -464,6 +464,12 @@ typedef enum
     SCREEN_MODE_game,           // 游戏页面
 } screen_status_e;
 
+typedef struct
+{
+  uint32_t  file_page_value_i[3]; //记录最后一次阅读的位置  ,分别是上页的初始i，这次的初始i，这次的结束i + 1
+  uint16_t  current_page;      // 当前页码
+}book_page_index_t;
+
 extern uint8_t language_choose_flag;
 extern LifeIndex life_index; // 创建结构体变量 生活指数
 extern boolean qqtq_state1 ;      // 请求天气状态位
@@ -472,7 +478,9 @@ extern uint32_t getvcc_time ;     // 获取电池电压时间
 extern int8_t ap_state ;          // 启动ap模式状态 -1扫描到网络，尝试连接 0-无 1-WiFi未配置 2-配置的WiFi扫描不到 3-连接失败 4-连接成功 5-更换wifi
 extern boolean peiwangInitStete ; // 配网初始化 0-未初始化 1-已初始化
 extern uint8_t RTC_re_count;      // 局刷次数
-
+extern String file_list[100];      // 存储目录信息
+extern String file_list_name[100]; // 存储名字信息
+extern uint32_t file_last_read[100][3]; // 记录最后一次阅读的位置  ,分别是上页的初始i，这次的初始i，这次的结束i + 1(即下页的开始值)
 
 
  void replyOK();
@@ -511,7 +519,7 @@ uint8_t return_file_num_flag(void);
 void display_SD_file_dynamic_ui(uint8_t file_num,uint8_t page_num);
 void display_SD_file_read(uint8_t file_num,uint8_t page_num);
 void read_file_data(String File_name);   //读取SD卡文件内容，保存与data3 字符串中
-void show_type1(uint32_t now1_i, uint8_t file_deinx)   ;
+void show_type1(uint32_t now1_i, uint8_t file_deinx);
 
 
 

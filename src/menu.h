@@ -81,6 +81,7 @@ typedef enum
 	SELECT_PAGE,						// 菜单    （main下的子表单）
   LANGUAGE_PAGE,          // 语言设置（setting下的子表单）
   WORD_PAGE,              // 字号设置（setting下的子表单）
+  BOOK_PAGE,              // 书籍页面（read下的子表单）
 	
 }OP_PAGE;
 
@@ -101,7 +102,10 @@ void setting_page_process(button_status_e Key5Value , button_status_e Key0Value)
 void Menu_Select_main(button_status_e Key5Value , button_status_e Key0Value);
 void language_page_process(button_status_e Key5Value, button_status_e Key0Value);
 void word_page_process(button_status_e Key5Value, button_status_e Key0Value);
+void book_page_process(button_status_e Key5Value, button_status_e Key0Value);
+
 uint8_t return_UI_loging_flag(void);
+uint8_t return_flie_current_num(void);
 
 
 
