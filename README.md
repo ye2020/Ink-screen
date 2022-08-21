@@ -1,4 +1,4 @@
-# Ink-screen[TOC]
+
 
 
 
@@ -6,9 +6,29 @@
 
 
 
-**version :**    *v1.0*      *「2022.7.14」*
+> **version :**    *v1.0*      *「2022.7.14」*     *未添加新功能*
+>
+> **author：**  *Y.Z.T.*
+>
+> 
+>
+> **简介：**  *该项目是基于ESP8266开发的一款多功能墨水屏；图一乐，随便记录一下*
 
-**author：**  *Y.Z.T.*
+
+
+
+
+
+
+---
+
+:star:<font face="华文行楷" color=black size=7> 目录</font>
+
+[TOC]
+
+
+
+
 
 
 
@@ -44,7 +64,7 @@
 
 
 
-<img src="记录一次墨水屏项目的开发过程.assets/image-20220715133600887.png" alt="image-20220715133600887" style="zoom: 33%;" />
+<img src="https://pic.imgdb.cn/item/6301e24a16f2c2beb15305f2.png" alt="image-20220715133600887" style="zoom: 33%;" />
 
 ​																										*==（图为原项目UI）==*
 
@@ -88,7 +108,7 @@
 
 
 
-<img src="记录一次墨水屏项目的开发过程.assets/image-20220715153810006.png" alt="image-20220715153810006" style="zoom:50%;" />
+<img src="https://pic.imgdb.cn/item/6301e25716f2c2beb1530c29.png" alt="image-20220715153810006" style="zoom:50%;" />
 
 ​																					     *==（图为阅读页面UI）==*
 
@@ -128,7 +148,7 @@
 
 **例如：**
 
-![img](记录一次墨水屏项目的开发过程.assets/302328397795708.jpg)
+![img](https://pic.imgdb.cn/item/6301e27216f2c2beb1531ce6.jpg)
 
 
 
@@ -168,7 +188,7 @@
 
 
 
-![image-20220715144919558](记录一次墨水屏项目的开发过程.assets/image-20220715144919558.png)
+![image-20220715144919558](https://pic.imgdb.cn/item/6301e28f16f2c2beb1532b2b.png)
 
 ​																				     *==（图为DJI的裁判系统主控模块）==*
 
@@ -200,7 +220,7 @@
 
 
 
-<img src="记录一次墨水屏项目的开发过程.assets/image-20220715150711055.png" alt="image-20220715150711055" style="zoom:50%;" />
+<img src="https://pic.imgdb.cn/item/6301e29416f2c2beb1532e19.png" alt="image-20220715150711055" style="zoom:50%;" />
 
 
 
@@ -230,7 +250,7 @@ PCB和软件一起搞最后bug在哪都不知道。
 
 ##### menu.c/h
 
-<img src="记录一次墨水屏项目的开发过程.assets/image-20220715155127589.png" alt="image-20220715155127589" style="zoom: 67%;" />
+<img src="https://pic.imgdb.cn/item/6301e29816f2c2beb1533041.png" alt="image-20220715155127589" style="zoom: 67%;" />
 
 
 
@@ -240,7 +260,7 @@ PCB和软件一起搞最后bug在哪都不知道。
 
 ##### menu_ui.c/h
 
-<img src="记录一次墨水屏项目的开发过程.assets/image-20220715155254661.png" alt="image-20220715155254661" style="zoom: 67%;" />
+<img src="https://pic.imgdb.cn/item/6301e29e16f2c2beb1533306.png" alt="image-20220715155254661" style="zoom: 67%;" />
 
 
 
@@ -254,7 +274,7 @@ PCB和软件一起搞最后bug在哪都不知道。
 
 在完成对代码框架的构建后，就是进行具体==代码的填充==和==测试完善==。
 
-![image-20220715160121682](记录一次墨水屏项目的开发过程.assets/image-20220715160121682.png)
+![image-20220715160121682](https://pic.imgdb.cn/item/6301e2a416f2c2beb153367d.png)
 
 
 
@@ -302,7 +322,7 @@ PCB和软件一起搞最后bug在哪都不知道。
 
 
 
-![image-20220715162646473](记录一次墨水屏项目的开发过程.assets/image-20220715162646473.png)
+![image-20220715162646473](https://pic.imgdb.cn/item/6301e2a916f2c2beb1533940.png)
 
 ​																						   			  *==（图为笔者的开发环境）==*
 
@@ -332,7 +352,7 @@ PCB和软件一起搞最后bug在哪都不知道。
 
 **例如笔者的目标如下图所示：**
 
-![img](记录一次墨水屏项目的开发过程.assets/302324095291738.jpg)
+![img](https://pic.imgdb.cn/item/6301e2cf16f2c2beb1534a98.jpg)
 
 
 
@@ -346,7 +366,7 @@ PCB和软件一起搞最后bug在哪都不知道。
 
 
 
-<img src="记录一次墨水屏项目的开发过程.assets/软件框架设计.png" alt="软件框架设计" style="zoom: 80%;" />
+<img src="https://pic.imgdb.cn/item/6301e2ae16f2c2beb1533bad.png" alt="软件框架设计" style="zoom: 80%;" />
 
 
 
@@ -359,7 +379,6 @@ PCB和软件一起搞最后bug在哪都不知道。
 **核心代码：**
 
 ```c
-
 #include "menu.h"
 #include <Arduino.h>
 #include "menu_ui.h"
@@ -893,11 +912,7 @@ void weather_page_ui_process(void)
 		ui_loging_flag = 1;
 	}
 
-	// if(RTC_get_data_count > 0xFFFF)		// 更新数据
-	// {
-	// 	RTC_get_data_count = 0;
-	// 	GetData();
-	// }
+
 }
 
 
@@ -960,7 +975,7 @@ void book_page_ui_process(void);
 
 
 
-![image-20220715172715788](记录一次墨水屏项目的开发过程.assets/image-20220715172715788.png)
+![image-20220715172715788](https://pic.imgdb.cn/item/6301e2b316f2c2beb1533e22.png)
 
 
 
@@ -974,7 +989,7 @@ void book_page_ui_process(void);
 
 
 
-![preview](记录一次墨水屏项目的开发过程.assets/v2-f7ebccfcbfce9879edc4d96163055d4b_r.jpg)
+![preview](https://pic.imgdb.cn/item/6301e2da16f2c2beb1534f8e.jpg)
 
 ​																				   			  *==（图为下载电路图）==*
 
@@ -1016,7 +1031,7 @@ void book_page_ui_process(void);
 
  
 
-但前后也花了将近5天的时间，实在是过于墨迹了，以至于笔者到后面开发过程中，逐渐变得浮躁，也因此浪费了更多时间。
+但前后也花了将近5天的时间，实在是过于墨迹了，以至于笔者到后面开发过程中，变得有些浮躁，也因此浪费了更多时间。
 
  （  实在是不应该 _(:з」∠)__   ）
 
